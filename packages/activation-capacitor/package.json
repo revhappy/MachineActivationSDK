@@ -37,7 +37,7 @@
     "build": "npm run clean && tsc -p tsconfig.build.json && tsc -p tsconfig.build.esm.json && node ./scripts/finalize-esm-build.js",
     "test:build": "node -e \"require('fs').rmSync('.test-dist', { recursive: true, force: true })\" && tsc -p tsconfig.tests.json",
     "test": "npm run test:build && node .test-dist/packages/activation-capacitor/tests/run.js",
-    "check": "npm run typecheck && npm run test && npm run build",
+    "check": "npm run typecheck && npm run build && npm run test",
     "prepack": "npm run build"
   },
   "peerDependencies": {
