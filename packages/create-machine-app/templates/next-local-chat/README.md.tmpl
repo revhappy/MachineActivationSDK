@@ -1,0 +1,62 @@
+# {{APP_NAME}}
+
+A Next.js 14 (app router) web app with streaming in-browser chat, powered
+by [`@mlc-ai/web-llm`](https://github.com/mlc-ai/web-llm) (WebGPU) and
+[`@machine/activation-sdk`](https://www.npmjs.com/package/@machine/activation-sdk)
++ [`@machine/ui`](https://www.npmjs.com/package/@machine/ui).
+
+## Prerequisites
+
+- Node 20+.
+- A browser with WebGPU enabled (Chrome / Edge 113+, Safari 18+, Firefox
+  Nightly with `dom.webgpu.enabled`).
+
+## Get started
+
+```bash
+{{PACKAGE_MANAGER}} install
+{{PACKAGE_MANAGER}} run dev
+```
+
+The first time you open the page, `@mlc-ai/web-llm` will download the
+WebLLM model weights into browser storage (IndexedDB). Subsequent loads
+pull from cache.
+
+## What's in `src/`
+
+- **`lib/webLlmRuntime.ts`** — an `ActivationRuntime` adapter that wraps
+  `@mlc-ai/web-llm`'s `CreateMLCEngine` + streaming chat completions.
+  Swap or extend it freely. Default WebLLM model:
+  `Llama-3.2-1B-Instruct-q4f32_1-MLC`.
+- **`app/layout.tsx`** — Next.js root layout.
+- **`app/page.tsx`** — client component. Creates the Machine, wires
+  `<MachineProvider>` around the chat screen.
+- **`app/ChatScreen.tsx`** — the chat UI. `useMachineModel({ cartridge })`
+  picks the cartridge, `useInference(model)` drives streaming, and
+  `<InferenceIndicator>` renders status.
+
+## Pick a WebLLM model
+
+Browse the full model list at
+<https://github.com/mlc-ai/web-llm/blob/main/src/config.ts> and update
+the fallback in `webLlmRuntime.ts` (or thread it through
+`ActivationSessionCreateInput.filePath`).
+
+## Why two model ids?
+
+`CARTRIDGE_ID` (e.g. `dev.machine.gemma-3n-e4b-it`) is the cartridge spec
+resolved by `@machine/activation-sdk`. The WebLLM model id (e.g.
+`Llama-3.2-1B-Instruct-q4f32_1-MLC`) is what `@mlc-ai/web-llm` downloads
+into the browser. This template uses a hard-coded WebLLM model — wire a
+real cartridge resolver if you want the cartridge metadata to drive the
+WebLLM pick.
+
+## Next steps
+
+- Replace the placeholder WebLLM model id with one that fits your UX
+  budget (smaller = faster first-load, larger = better quality).
+- Add streaming fallbacks for non-WebGPU browsers (e.g. a server-side
+  route).
+- Style the UI to taste — `@machine/ui/web` components emit
+  `data-machine-ui="<name>"` attributes so you can target them in CSS or
+  Tailwind.

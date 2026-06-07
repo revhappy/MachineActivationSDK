@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "outDir": "dist",
+    "declaration": true,
+    "rootDir": "src",
+    "paths": {
+      "@machine/activation-sdk": ["../../dist/cjs/index.d.ts"],
+      "@machine/activation-sdk/*": ["../../dist/cjs/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "types/**/*.d.ts"]
+}

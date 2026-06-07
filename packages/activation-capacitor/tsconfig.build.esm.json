@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "outDir": "dist/esm",
+    "declaration": false,
+    "rootDir": "src",
+    "paths": {
+      "@machine/activation-sdk": ["../../dist/cjs/index.d.ts"],
+      "@machine/activation-sdk/*": ["../../dist/cjs/*"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}

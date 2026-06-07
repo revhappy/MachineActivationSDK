@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "1.0.0",
+  "updatedAt": "2026-04-19T00:00:00.000Z",
+  "entries": [
+    {
+      "id": "com.example.demo-small",
+      "version": "0.1.0",
+      "name": "Demo Small",
+      "description": "Sample cartridge used by the M4 catalog tests and docs. Not a real model.",
+      "author": { "name": "Machine AI" },
+      "license": "MIT",
+      "tags": ["demo", "sample"],
+      "categories": ["text"],
+      "downloadUrl": "https://example.invalid/demo-small-0.1.0.mcart",
+      "downloadSizeBytes": 4096,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "publishedAt": "2026-04-19T00:00:00.000Z",
+      "featured": true,
+      "manifest": {
+        "schemaVersion": "1.0.0",
+        "id": "com.example.demo-small",
+        "name": "Demo Small",
+        "version": "0.1.0",
+        "description": "Sample cartridge for local testing.",
+        "license": "MIT",
+        "weights": {
+          "format": "gguf",
+          "path": "weights/model.gguf",
+          "sizeBytes": 2048,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "capabilities": {
+          "inputModalities": ["text"],
+          "outputModalities": ["text"],
+          "contextWindowTokens": 2048,
+          "supportsTextCompletion": true,
+          "supportsTextChat": true,
+          "supportsStreaming": true
+        }
+      }
+    },
+    {
+      "id": "com.example.demo-gemma",
+      "version": "1.0.0",
+      "name": "Demo Gemma",
+      "description": "Second sample cartridge entry to exercise catalog filtering and resolution.",
+      "author": { "name": "Machine AI", "url": "https://example.invalid" },
+      "license": "Apache-2.0",
+      "tags": ["demo", "gemma"],
+      "categories": ["text", "chat"],
+      "downloadUrl": "https://example.invalid/demo-gemma-1.0.0.mcart",
+      "downloadSizeBytes": 8192,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "publishedAt": "2026-04-19T00:00:00.000Z",
+      "manifest": {
+        "schemaVersion": "1.0.0",
+        "id": "com.example.demo-gemma",
+        "name": "Demo Gemma",
+        "version": "1.0.0",
+        "weights": {
+          "format": "gguf",
+          "path": "weights/model.gguf",
+          "sizeBytes": 4096,
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "capabilities": {
+          "inputModalities": ["text"],
+          "outputModalities": ["text"],
+          "contextWindowTokens": 8192,
+          "supportsTextCompletion": true,
+          "supportsTextChat": true,
+          "supportsStreaming": true,
+          "structuredJsonOutput": true,
+          "toolCalling": true
+        }
+      }
+    }
+  ]
+}

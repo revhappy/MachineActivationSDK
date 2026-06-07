@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.test-dist/
+*.tsbuildinfo
+
+# Stray compiled output that lands next to TypeScript sources
+# (the build emits to dist/; these are leftovers and must not be tracked)
+/src/**/*.js
+/src/**/*.d.ts
+/src/**/*.js.map
+
+# Packed tarballs / pack scratch
+.pack/
+*.tgz
+
+# Caches
+.npm-cache/
+.gstack/
+
+# Logs
+npm-debug.log*
+*.log
+
+# Local tooling / editor config (machine-specific — never publish)
+.claude/
+.DS_Store

@@ -1,0 +1,33 @@
+# {{APP_NAME}}
+
+A minimal Node script that runs one-shot inference against a local cartridge
+via [`@machine/activation-sdk`](https://www.npmjs.com/package/@machine/activation-sdk).
+
+## Get started
+
+```bash
+{{PACKAGE_MANAGER}} install
+{{PACKAGE_MANAGER}} run build
+{{PACKAGE_MANAGER}} start
+```
+
+The first run will download the cartridge into a local cache (`.machine-cache/`)
+if it isn't already present. Subsequent runs reuse the cached weights.
+
+## What's in `src/index.ts`
+
+- `createMachine({ runtimes, cartridgeResolver })` — constructs the Machine,
+  wiring a runtime (yours) to a cartridge resolver that pulls from the catalog.
+- `machine.model({ cartridge: 'dev.machine.gemma-3n-e4b-it' })` — declares
+  which cartridge your code wants. The resolver materializes it on first use.
+- `generateText({ model, prompt })` — one-shot completion. Drop-in API shape
+  matches the Vercel AI SDK and OpenAI SDK.
+
+## Next steps
+
+- Swap the placeholder `runtime` in `src/index.ts` for a real
+  `ActivationRuntime` (e.g. a llama.cpp / llamafile-backed one).
+- Point `cartridge:` at a different cartridge from the catalog, or publish
+  your own with `machine pack` + `machine publish`.
+- Explore `streamText`, `generateObject`, and `tool` — same model, same
+  runtime, different call shapes.

@@ -1,0 +1,153 @@
+{
+  "name": "machine_activation_sdk_app_integration_spec",
+  "version": "0.1.0",
+  "purpose": "Guide an agent or tool to port an existing AI-native app from cloud inference to the Machine Activation SDK while preserving the app UI and minimizing product friction.",
+  "primary_goal": "Keep the app's existing UI and product behavior, replace the inference layer with Machine Activation SDK integration, and preserve a simple cartridge-style user flow: pick/import model, save config, activate session, run inference.",
+  "non_goals": [
+    "Do not redesign the app UI unless needed for activation setup or local/cloud proof.",
+    "Do not turn diagnostics into default activation blockers.",
+    "Do not force backend-specific quirks into the generic SDK surface unless they are truly reusable."
+  ],
+  "core_principles": [
+    "activation_first",
+    "diagnostics_optional",
+    "preserve_existing_ui",
+    "hard_fail_only_on_impossible_cases",
+    "make_local_inference_visible_but_subtle",
+    "separate_sdk_core_from_app_specific_glue",
+    "prefer_mature_backend_lanes_over_reimplementing_inference_features"
+  ],
+  "required_inputs": [
+    {
+      "id": "app_root",
+      "description": "Absolute path to the app being ported."
+    },
+    {
+      "id": "platform_targets",
+      "description": "Target platforms for local inference, for example android, ios, react-native, capacitor, web."
+    },
+    {
+      "id": "current_inference_entrypoints",
+      "description": "Files/services where the app currently calls cloud inference."
+    },
+    {
+      "id": "target_local_runtime",
+      "description": "Backend/runtime lane to use first, for example llama.cpp, llama.rn, LiteRT, LiteRT-LM."
+    }
+  ],
+  "integration_outputs": [
+    "provider_mode_seam",
+    "sdk_activation_entrypoint",
+    "sdk_setup_controller_usage",
+    "local_model_config_flow",
+    "runtime_adapter_registration",
+    "local_analysis_route",
+    "local_chat_route_if_app_has_chat",
+    "subtle_inference_source_indicator",
+    "integration_checkpoint_doc"
+  ],
+  "hard_failure_conditions": [
+    "selected_model_file_missing",
+    "unsupported_model_format_for_selected_runtime",
+    "model_import_failed",
+    "native_engine_or_session_creation_failed",
+    "runtime_adapter_not_registered"
+  ],
+  "advisory_conditions": [
+    "structured_output_not_guaranteed",
+    "memory_fit_is_tight",
+    "vision_support_is_uncertain",
+    "context_window_is_tight",
+    "acceleration_is_degraded"
+  ],
+  "porting_workflow": [
+    {
+      "id": "map_cloud_seam",
+      "description": "Find the current cloud analysis and chat call sites, validation detours, and any hidden fallback paths.",
+      "required": true
+    },
+    {
+      "id": "add_provider_mode",
+      "description": "Add a simple provider seam such as cloud vs machine_activation without changing the app's visible product flow more than necessary.",
+      "required": true
+    },
+    {
+      "id": "register_runtime",
+      "description": "Register the app's local runtime adapter so the Machine Activation SDK can create sessions.",
+      "required": true
+    },
+    {
+      "id": "add_model_config_storage",
+      "description": "Use the SDK's stored model-config concepts instead of app-specific raw-path state when possible.",
+      "required": true
+    },
+    {
+      "id": "use_sdk_setup_controller",
+      "description": "Prefer the SDK's reusable setup flow for load, pick/import, optional verify, save, and clear instead of rebuilding picker logic from scratch.",
+      "required": true
+    },
+    {
+      "id": "implement_pick_import_save_activate_flow",
+      "description": "Create the smallest acceptable user flow for model selection: pick/import, save config, activate on demand.",
+      "required": true
+    },
+    {
+      "id": "route_analysis_to_local",
+      "description": "Swap the app's main analysis path to Machine Activation when local mode is active.",
+      "required": true
+    },
+    {
+      "id": "route_chat_to_local",
+      "description": "Swap follow-up chat to Machine Activation when the app includes a product chat surface.",
+      "required": false
+    },
+    {
+      "id": "remove_hidden_cloud_detours",
+      "description": "Eliminate validation or fallback routes that still quietly hit cloud inference when local mode is selected.",
+      "required": true
+    },
+    {
+      "id": "normalize_local_outputs",
+      "description": "Add a shaping layer between raw local model output and the app UI so missing arrays or nested fields do not crash the product.",
+      "required": true
+    },
+    {
+      "id": "add_subtle_source_proof",
+      "description": "Show a small visible local/cloud source indicator during processing and or results.",
+      "required": true
+    },
+    {
+      "id": "document_backend_specific_quirks",
+      "description": "Record runtime-specific details separately from generic SDK promises.",
+      "required": true
+    }
+  ],
+  "anti_patterns": [
+    "blocking_activation_on_soft_capability_concerns",
+    "forcing_users_to_type_raw_model_paths_by_default",
+    "rewriting_the_app_ui_instead_of_swapping_the_inference_layer",
+    "hiding_real_runtime_limitations_behind_fake_capability_guarantees",
+    "treating_content_uris_as_real_filesystem_paths",
+    "letting_partial_local_output_reach_the_ui_unshaped"
+  ],
+  "success_criteria": [
+    "The app keeps its existing UI and product identity.",
+    "The app can run analysis through Machine Activation when local mode is selected.",
+    "The app can run chat through Machine Activation when applicable.",
+    "The user can select or import a local model without expert-only friction.",
+    "Diagnostics do not block activation except for impossible cases.",
+    "The app visibly indicates local vs cloud inference source.",
+    "The integration is documented well enough for a future agent to repeat the pattern."
+  ],
+  "recommended_docs_to_update": [
+    "activation-sdk/README.md",
+    "activation-sdk/ACTIVATION_SDK_INTEGRATION_LESSONS.md",
+    "app_root/ACTIVATION_SDK_INTEGRATION_CHECKPOINT.md"
+  ],
+  "notes": {
+    "backend_specific_runtime_notes": "Keep runtime quirks such as LiteRT-LM image invocation details in backend-specific notes, not in the generic activation promise.",
+    "strict_mode_guidance": "Strict compatibility policy should be opt-in for apps that explicitly want hard preflight enforcement.",
+    "ui_guidance": "A subtle source badge is preferred over loud product chrome.",
+    "backend_strategy": "Prefer llama-family runtimes for GGUF cartridges and LiteRT-family runtimes for LiteRT package formats. The SDK should focus on activation and integration, not on duplicating mature backend capabilities."
+  }
+}

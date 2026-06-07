@@ -1,0 +1,58 @@
+# {{APP_NAME}}
+
+A bare React Native app (no Expo) with streaming on-device chat, powered by
+[`llama.rn`](https://github.com/mybigday/llama.rn) and
+[`@machine/activation-sdk`](https://www.npmjs.com/package/@machine/activation-sdk)
++ [`@machine/ui`](https://www.npmjs.com/package/@machine/ui).
+
+## Prerequisites
+
+Follow the React Native CLI setup guide for your platform:
+<https://reactnative.dev/docs/environment-setup>
+
+You'll need Xcode (for iOS) and/or Android Studio + the Android SDK (for
+Android), plus Node 20+.
+
+## Get started
+
+```bash
+{{PACKAGE_MANAGER}} install
+npx pod-install           # iOS only — installs CocoaPods deps
+{{PACKAGE_MANAGER}} run ios      # or: {{PACKAGE_MANAGER}} run android
+```
+
+In another terminal, start the Metro dev server (if it didn't auto-start):
+
+```bash
+{{PACKAGE_MANAGER}} run start
+```
+
+`llama.rn` needs the New Architecture enabled. Generate native projects
+(`npx react-native-community/cli init`) with `--new-architecture`, or flip
+`newArchEnabled=true` in `android/gradle.properties` and
+`RCT_NEW_ARCH_ENABLED=1` in the iOS Podfile.
+
+## What's in `src/`
+
+- **`llamaRuntime.ts`** — an `ActivationRuntime` adapter that wraps
+  `llama.rn`'s `initLlama` + session streaming. Swap or extend it freely.
+- **`App.tsx`** — wires `<MachineProvider>` around the chat screen, using
+  a `Machine` constructed with the `llama.rn` runtime.
+- **`ChatScreen.tsx`** — the chat UI. `useMachineModel({ cartridge })` picks
+  the cartridge, `useInference(model)` drives streaming, and
+  `<InferenceIndicator>` renders status.
+
+## Pick a cartridge
+
+`ChatScreen.tsx` loads `dev.machine.gemma-3n-e4b-it` by default. Browse
+more on the cartridge catalog or publish your own with
+`machine pack` + `machine publish`.
+
+## Next steps
+
+- Replace the placeholder cartridge id with your own cartridge.
+- Style the UI to taste — everything in `@machine/ui/native` is unstyled
+  and renders primitive `View` / `Text` so you can theme it freely.
+- Add a `<ModelPicker>` screen for production flows where users pick the
+  cartridge themselves.
+- If you prefer Expo over bare RN, try `create-machine-app --template expo-local-chat`.

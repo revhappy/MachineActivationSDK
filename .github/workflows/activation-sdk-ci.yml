@@ -1,0 +1,68 @@
+name: Activation SDK CI
+
+on:
+  push:
+    paths:
+      - '**'
+      - '.github/workflows/activation-sdk-ci.yml'
+  pull_request:
+    paths:
+      - '**'
+      - '.github/workflows/activation-sdk-ci.yml'
+  workflow_dispatch:
+
+jobs:
+  sdk-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install SDK dependencies
+        run: npm ci
+
+      - name: Verify SDK package
+        run: npm run release:verify
+
+  basic-consumer-check:
+    runs-on: ubuntu-latest
+    needs: sdk-check
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            examples/basic-consumer/package-lock.json
+
+      - name: Install SDK dependencies
+        run: npm ci
+
+      - name: Build SDK
+        run: npm run build
+
+      - name: Install example consumer dependencies
+        working-directory: examples/basic-consumer
+        run: npm ci
+
+      - name: Verify example consumer
+        working-directory: examples/basic-consumer
+        run: npm run check

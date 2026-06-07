@@ -1,0 +1,19 @@
+{
+  "name": "{{APP_NAME}}",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsc -p tsconfig.json --watch"
+  },
+  "dependencies": {
+    "@machine/activation-sdk": "^0.1.0-alpha.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "@types/node": "^20.0.0"
+  }
+}

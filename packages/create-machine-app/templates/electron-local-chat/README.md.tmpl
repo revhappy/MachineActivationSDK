@@ -1,0 +1,146 @@
+# {{APP_NAME}}
+
+A multi-runtime Electron desktop app for local-LLM chat. Out of the box it
+handles three model file formats with three different inference backends:
+
+| Format | Runtime | Where it runs | Grammar / GBNF |
+|---|---|---|---|
+| `.gguf` | bundled `llama-server.exe` | main-process subprocess | yes (sampling-time) |
+| `.task` | `@mediapipe/tasks-genai` | renderer (WebAssembly) | no (prompt fallback) |
+| `.litertlm` | (recognized, not yet usable) | — | — |
+
+Powered by [`@machine/activation-sdk`](https://www.npmjs.com/package/@machine/activation-sdk)
++ [`@machine/ui`](https://www.npmjs.com/package/@machine/ui).
+
+## Why this template doesn't use `node-llama-cpp`
+
+Most Electron + llama.cpp tutorials reach for `node-llama-cpp`. That works
+for the first commit, but it bakes a staleness defect into every downstream
+app: the npm package ships a frozen llama.cpp build, and when a new model
+architecture lands upstream (Gemma 4, the next Llama, ...) every app
+breaks until npm catches up.
+
+This template avoids the trap by vendoring llama.cpp's official
+[GitHub-published `llama-server`](https://github.com/ggml-org/llama.cpp/releases)
+binary at build time and spawning it as a subprocess. The OpenAI-compatible
+HTTP+SSE surface is stable across llama.cpp versions, so updating to a
+newer build is just `npm run fetch:llama` — no source compile, no native
+rebuild step, no waiting for someone to publish a new npm release.
+
+## Why a multi-format picker, not a hard-coded cartridge
+
+Cartridge ids are fine for a fixed-model demo. Real users want to point at
+GGUFs they already have on disk (LM Studio, Ollama, text-gen-webui all
+share the same files). The template's first-run flow is a file picker that
+remembers the path in `<userData>/config.json`, plus a "switch model"
+button in the chat UI. Picker accepts `.gguf`, `.task`, and `.litertlm`;
+the renderer's `runtimeSelector.ts` routes each to the right backend.
+
+## Prerequisites
+
+- Node 20+.
+- Internet on first build (the fetch script downloads ~16 MB of llama.cpp
+  binaries into `vendor/llama-cpp/`). Subsequent builds reuse the cache.
+- Windows x64 today. Adding macOS/Linux is small: extend the asset name
+  pattern in `scripts/fetch-llama-cpp.js` and the binary path in
+  `electron/llamaServerRuntime.ts`.
+
+## Get started
+
+```bash
+{{PACKAGE_MANAGER}} install
+{{PACKAGE_MANAGER}} run fetch:llama
+{{PACKAGE_MANAGER}} run dev
+```
+
+`dev` runs Vite (renderer dev server on :5173), `tsc --watch` for the main
+process, and Electron — all concurrently. Hot-reload works for the
+renderer; main-process changes restart Electron.
+
+### Production build + installer
+
+```bash
+{{PACKAGE_MANAGER}} run build      # fetch:llama + typecheck + bundle + vite
+{{PACKAGE_MANAGER}} run package    # NSIS installer at release/*.exe
+```
+
+`build` re-runs `fetch:llama` first so a fresh package always ships the
+latest llama.cpp.
+
+## Architecture
+
+```
+┌─ main process ─────────────────────────────────┐
+│  electron/main.ts                              │
+│    • app-model:// custom protocol              │
+│    • config.json: { modelFilePath }            │
+│    • IPC handlers (machine, config, memory…)   │
+│    ↓                                           │
+│  llamaServerRuntime.ts                         │
+│    spawn ── llama-server.exe ── HTTP/SSE       │
+│    (vendor/llama-cpp/win-x64/)                 │
+└────────────────────────────────────────────────┘
+       ↕ IPC (contextBridge: window.machine, .config)
+┌─ renderer ─────────────────────────────────────┐
+│  src/App.tsx                                   │
+│    runtimeSelector picks per file extension    │
+│  src/lib/ipcRuntime.ts        (.gguf path)     │
+│  src/lib/mediaPipeRuntime.ts  (.task path)     │
+│    LlmInference + WebAssembly                  │
+│    loads model via app-model:// URL            │
+└────────────────────────────────────────────────┘
+```
+
+The renderer never knows which backend is active. Both runtimes implement
+the same `ActivationRuntime` interface, and both are wrapped in a
+`Machine` via `createMachine({ runtimes })`. Hooks like `useMachineModel`,
+`streamText`, `generateObject` work identically on either path — except
+for `generateObject`'s GBNF-at-sampling-time guarantee, which only fires
+on the `.gguf` (llama-server) path. On `.task` it falls back to the
+prompt-and-retry shape.
+
+## Updating llama.cpp
+
+```bash
+rm -rf vendor/llama-cpp
+{{PACKAGE_MANAGER}} run fetch:llama
+```
+
+Always pulls `releases/latest`. Re-run before the next `npm run package`.
+
+## Updating MediaPipe (`.task` runtime)
+
+```bash
+{{PACKAGE_MANAGER}} install @mediapipe/tasks-genai@latest
+{{PACKAGE_MANAGER}} run build
+```
+
+The Vite plugin in `vite.config.ts` re-copies the WASM files into the
+renderer bundle on every build, so just bumping the npm package is
+enough.
+
+## Why no `.litertlm`?
+
+Google's LiteRT-LM CLI shipped a Windows binary in v0.11.0 (May 2026), but:
+
+1. The Windows release artifact is missing required runtime DLLs and exits
+   with `STATUS_DLL_NOT_FOUND` on startup — verified, not yet fixed
+   upstream.
+2. The CLI is single-shot `--prompt="…"` only — no daemon mode, no
+   streaming, no grammar. Not embeddable as a chat backend.
+
+When upstream ships a complete release with a daemon mode, adding it as a
+third runtime is straightforward (mirror `llamaServerRuntime.ts`'s
+spawn-and-HTTP pattern). For now, the picker accepts `.litertlm` so users
+who pick one get a clear explanatory notice instead of a confusing
+"runtime missing" error.
+
+## Next steps
+
+- Add a runtime for a remote OpenAI-compatible endpoint (e.g. for
+  fallback to a hosted model when no local one is available).
+- Add a `<ModelPicker>` from `@machine/ui` for browsing the cartridge
+  catalog inline (in addition to the OS file picker).
+- Bundle a default GGUF on first launch so the user doesn't have to find
+  one — see the cartridge SDK's `machine pull` flow.
+- Package + sign the app with `electron-builder`'s `publish` config.

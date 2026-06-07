@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+*.log
+.DS_Store
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo

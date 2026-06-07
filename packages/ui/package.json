@@ -1,0 +1,63 @@
+{
+  "name": "@machine/ui",
+  "version": "0.2.0-beta.1",
+  "description": "Headless React / React Native UI kit for @machine/activation-sdk (ModelPicker, CartridgeCard, ActivationStatus, InferenceIndicator, ModelImportButton).",
+  "license": "MIT",
+  "author": "Machine AI Contributors",
+  "keywords": [
+    "machine-activation",
+    "react",
+    "react-native",
+    "ui",
+    "headless-ui",
+    "local-llm"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./web": {
+      "types": "./dist/web/index.d.ts",
+      "require": "./dist/web/index.js",
+      "default": "./dist/web/index.js"
+    },
+    "./native": {
+      "types": "./dist/native/index.d.ts",
+      "require": "./dist/native/index.js",
+      "default": "./dist/native/index.js"
+    }
+  },
+  "scripts": {
+    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "npm run clean && tsc -p tsconfig.build.json",
+    "test:build": "node -e \"require('fs').rmSync('.test-dist', { recursive: true, force: true })\" && tsc -p tsconfig.tests.json",
+    "test": "npm run test:build && node .test-dist/packages/ui/tests/run.js",
+    "check": "npm run typecheck && npm run test && npm run build",
+    "prepack": "npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-native": ">=0.72.0"
+  },
+  "peerDependenciesMeta": {
+    "react-native": { "optional": true }
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "react": "^18.3.1"
+  }
+}

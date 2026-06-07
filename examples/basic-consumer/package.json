@@ -1,0 +1,15 @@
+{
+  "name": "machine-activation-sdk-basic-consumer",
+  "private": true,
+  "version": "0.0.1",
+  "description": "External-style consumer example for the Machine Activation SDK",
+  "scripts": {
+    "check": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@machine/activation-sdk": "file:../.."
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

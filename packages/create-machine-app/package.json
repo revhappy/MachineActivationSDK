@@ -1,0 +1,38 @@
+{
+  "name": "@machine/create-machine-app",
+  "version": "0.2.0-beta.1",
+  "description": "Scaffold a local-LLM app (Expo / RN / Next / Electron / Node) preconfigured for @machine/activation-sdk.",
+  "license": "MIT",
+  "author": "Machine AI Contributors",
+  "keywords": [
+    "machine-activation",
+    "create",
+    "scaffold",
+    "local-llm",
+    "expo",
+    "react-native",
+    "next",
+    "electron"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "create-machine-app": "./dist/bin/index.js"
+  },
+  "files": [
+    "dist",
+    "templates",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "npm run clean && tsc -p tsconfig.build.json",
+    "test:build": "node -e \"require('fs').rmSync('.test-dist', { recursive: true, force: true })\" && tsc -p tsconfig.tests.json",
+    "test": "npm run build && npm run test:build && node .test-dist/tests/run.js",
+    "check": "npm run typecheck && npm run test && npm run build",
+    "prepack": "npm run build"
+  }
+}

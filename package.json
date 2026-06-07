@@ -1,0 +1,99 @@
+{
+  "name": "@machine/activation-sdk",
+  "version": "0.2.0-beta.1",
+  "description": "Plug local-model cartridges into apps with a permissive activation layer. Vercel-AI-SDK-shaped drop-in API (createMachine, generateText, streamText, generateObject, tool) over a backend-agnostic ActivationRuntime adapter.",
+  "license": "MIT",
+  "author": "Machine AI Contributors",
+  "keywords": [
+    "local-llm",
+    "llm",
+    "ai-sdk",
+    "vercel-ai-sdk",
+    "cartridge",
+    "gguf",
+    "llama-cpp",
+    "on-device",
+    "edge-ai",
+    "machine-activation"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/cjs/index.d.ts",
+  "bin": {
+    "machine": "./dist/cjs/bin/machine.js"
+  },
+  "files": [
+    "dist",
+    "catalog",
+    "LICENSE",
+    "README.md",
+    "MIGRATION.md",
+    "GETTING_STARTED.md",
+    "BACKEND_CAPABILITIES.md",
+    "PACKAGE_CONSUMPTION.md",
+    "PUBLISHING.md"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/cjs/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "default": "./dist/cjs/index.js"
+    },
+    "./node": {
+      "types": "./dist/cjs/node.d.ts",
+      "import": "./dist/esm/node.js",
+      "require": "./dist/cjs/node.js",
+      "default": "./dist/cjs/node.js"
+    }
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
+    "prepare:catalog": "node ./scripts/generate-capability-catalog.js",
+    "typecheck": "npm run prepare:catalog && tsc -p tsconfig.json --noEmit",
+    "build": "npm run prepare:catalog && npm run clean && tsc -p tsconfig.build.json && tsc -p tsconfig.build.esm.json && node ./scripts/finalize-esm-build.js",
+    "test:build": "npm run prepare:catalog && node -e \"require('fs').rmSync('.test-dist', { recursive: true, force: true })\" && tsc -p tsconfig.tests.json",
+    "test": "npm run test:build && node .test-dist/tests/run.js",
+    "check": "npm run typecheck && npm run test && npm run build",
+    "typecheck:ui": "npm run typecheck --workspace @machine/ui",
+    "test:ui": "npm run test --workspace @machine/ui",
+    "build:ui": "npm run build --workspace @machine/ui",
+    "check:ui": "npm run check --workspace @machine/ui",
+    "typecheck:scaffolder": "npm run typecheck --workspace @machine/create-machine-app",
+    "test:scaffolder": "npm run test --workspace @machine/create-machine-app",
+    "build:scaffolder": "npm run build --workspace @machine/create-machine-app",
+    "check:scaffolder": "npm run check --workspace @machine/create-machine-app",
+    "check:capacitor": "npm run check --workspace @machine/activation-capacitor",
+    "check:all": "npm run check && npm run check:ui && npm run check:scaffolder && npm run check:capacitor",
+    "pack:dry-run": "node ./scripts/run-npm-pack-dry-run.js",
+    "release:verify": "npm run check:all && npm run pack:dry-run",
+    "prepack": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.12",
+    "@types/yauzl": "^2.10.3",
+    "@types/yazl": "^3.3.1",
+    "react": "^18.3.1",
+    "typescript": "^5.6.3"
+  },
+  "peerDependencies": {
+    "zod": ">=3.22.0 <4"
+  },
+  "peerDependenciesMeta": {
+    "zod": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "yauzl": "^3.3.0",
+    "yazl": "^3.3.1"
+  }
+}

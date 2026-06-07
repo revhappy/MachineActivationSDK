@@ -1,0 +1,54 @@
+# {{APP_NAME}}
+
+An Expo app with streaming on-device chat, powered by
+[`llama.rn`](https://github.com/mybigday/llama.rn) and
+[`@machine/activation-sdk`](https://www.npmjs.com/package/@machine/activation-sdk)
++ [`@machine/ui`](https://www.npmjs.com/package/@machine/ui).
+
+## Get started
+
+```bash
+{{PACKAGE_MANAGER}} install
+{{PACKAGE_MANAGER}} run start
+```
+
+Then scan the QR code with the Expo Go app (for JS-only changes) or build a
+dev client (`npx expo run:ios` / `npx expo run:android`) to exercise
+`llama.rn` against a real GGUF model.
+
+### iOS native setup
+
+```bash
+cd ios && pod install && cd ..
+```
+
+Expo's prebuild handles the rest. `llama.rn` requires the New Architecture
+(enabled in `app.json`).
+
+### Android
+
+No extra step — Expo's prebuild wires up the `llama.rn` autolinking.
+
+## What's in `src/`
+
+- **`llamaRuntime.ts`** — an `ActivationRuntime` adapter that wraps
+  `llama.rn`'s `initLlama` + session streaming. Swap or extend it freely.
+- **`App.tsx`** — wires `<MachineProvider>` around the chat screen, using
+  a `Machine` constructed with the `llama.rn` runtime.
+- **`ChatScreen.tsx`** — the chat UI. `useMachineModel({ cartridge })` picks
+  the cartridge, `useInference(model)` drives streaming, and
+  `<InferenceIndicator>` renders status.
+
+## Pick a cartridge
+
+`ChatScreen.tsx` loads `dev.machine.gemma-3n-e4b-it` by default. Browse
+more on the cartridge catalog or publish your own with
+`machine pack` + `machine publish`.
+
+## Next steps
+
+- Replace the placeholder cartridge id with your own cartridge.
+- Style the UI to taste — everything in `@machine/ui/native` is unstyled
+  and renders primitive `View` / `Text` so you can theme it freely.
+- Add a `<ModelPicker>` screen for production flows where users pick the
+  cartridge themselves.

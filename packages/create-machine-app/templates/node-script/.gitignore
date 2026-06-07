@@ -1,0 +1,4 @@
+node_modules/
+dist/
+.machine-cache/
+*.log

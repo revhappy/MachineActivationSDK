@@ -1,0 +1,54 @@
+{
+  "name": "@machine/activation-capacitor",
+  "version": "0.2.0-beta.1",
+  "description": "Capacitor (Android) runtime adapter for @machine/activation-sdk. Bridges the LiteRT-LM native plugin to the activation runtime contract.",
+  "license": "MIT",
+  "author": "Machine AI Contributors",
+  "keywords": [
+    "machine-activation",
+    "capacitor",
+    "android",
+    "litert-lm",
+    "local-llm"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/cjs/index.d.ts",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/cjs/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "default": "./dist/cjs/index.js"
+    }
+  },
+  "scripts": {
+    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "npm run clean && tsc -p tsconfig.build.json && tsc -p tsconfig.build.esm.json && node ./scripts/finalize-esm-build.js",
+    "test:build": "node -e \"require('fs').rmSync('.test-dist', { recursive: true, force: true })\" && tsc -p tsconfig.tests.json",
+    "test": "npm run test:build && node .test-dist/packages/activation-capacitor/tests/run.js",
+    "check": "npm run typecheck && npm run test && npm run build",
+    "prepack": "npm run build"
+  },
+  "peerDependencies": {
+    "@capacitor/core": ">=5.0.0",
+    "@capawesome/capacitor-file-picker": ">=6.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@capawesome/capacitor-file-picker": { "optional": true }
+  },
+  "devDependencies": {
+    "@capacitor/core": "^6.1.2",
+    "@capawesome/capacitor-file-picker": "^6.2.0"
+  }
+}
