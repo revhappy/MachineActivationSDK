@@ -1,8 +1,8 @@
 # Machine Activation SDK
 
-The Machine Activation SDK is now the primary direction of the project.
+The Machine Activation SDK
 
-Its purpose is to let developers plug a local model into an app like a cartridge and get a simple activation path first, with diagnostics available when they want them.
+Purpose is to let developers plug a local model into an app like a cartridge and get a simple activation path first, with diagnostics available when they want them.
 
 The public package name is:
 
