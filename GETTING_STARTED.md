@@ -71,7 +71,7 @@ import {
   createJsonActivationModelConfigStorage,
   createMachineActivationSdk,
   LITERT_LM_ANDROID_PRESET,
-} from '@machine/activation-sdk';
+} from '@revhappy/activation-sdk';
 
 const setup = createActivationModelSetupController({
   storage: createJsonActivationModelConfigStorage({

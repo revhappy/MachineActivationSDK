@@ -41,7 +41,7 @@ test('next-local-chat: substitutes APP_NAME into package.json', () => {
     assertEqual(pkg.name, 'my-next');
     assert(pkg.dependencies?.next !== undefined, 'next dep present');
     assert(pkg.dependencies?.['@mlc-ai/web-llm'] !== undefined, '@mlc-ai/web-llm dep present');
-    assert(pkg.dependencies?.['@machine/ui'] !== undefined, '@machine/ui dep present');
+    assert(pkg.dependencies?.['@revhappy/ui'] !== undefined, '@revhappy/ui dep present');
   });
 });
 
@@ -70,27 +70,27 @@ test('next-local-chat: page.tsx wires MachineProvider + webLlmRuntime', () => {
   });
 });
 
-test('next-local-chat: ChatScreen uses @machine/ui/web hooks', () => {
+test('next-local-chat: ChatScreen uses @revhappy/ui/web hooks', () => {
   withTempDir((tmp) => {
     runCli(['c', '-t', 'next-local-chat', '-y'], { cwd: tmp });
     const source = readFileSync(
       join(tmp, 'c', 'src', 'app', 'ChatScreen.tsx'),
       'utf8',
     );
-    assert(source.includes('@machine/ui/web'), 'should import from @machine/ui/web');
+    assert(source.includes('@revhappy/ui/web'), 'should import from @revhappy/ui/web');
     assert(source.includes('useInference'), 'should use useInference');
     assert(source.includes('useMachineModel'), 'should use useMachineModel');
     assert(source.includes('InferenceIndicator'), 'should render InferenceIndicator');
   });
 });
 
-test('next-local-chat: next.config.js transpiles @machine/* workspaces', () => {
+test('next-local-chat: next.config.js transpiles @revhappy/* workspaces', () => {
   withTempDir((tmp) => {
     runCli(['d', '-t', 'next-local-chat', '-y'], { cwd: tmp });
     const source = readFileSync(join(tmp, 'd', 'next.config.js'), 'utf8');
     assert(source.includes('transpilePackages'), 'next.config.js sets transpilePackages');
-    assert(source.includes('@machine/activation-sdk'), 'transpiles @machine/activation-sdk');
-    assert(source.includes('@machine/ui'), 'transpiles @machine/ui');
+    assert(source.includes('@revhappy/activation-sdk'), 'transpiles @revhappy/activation-sdk');
+    assert(source.includes('@revhappy/ui'), 'transpiles @revhappy/ui');
   });
 });
 

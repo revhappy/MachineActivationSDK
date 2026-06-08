@@ -4,7 +4,7 @@
 
 ## 30-second orientation
 
-This package is **`@machine/activation-sdk`** — a Vercel-AI-SDK-shaped API over on-device LLMs, plus a `.mcart` cartridge format (a model + its metadata, packaged + sha256-verified + loadable from a local cache). Ships:
+This package is **`@revhappy/activation-sdk`** — a Vercel-AI-SDK-shaped API over on-device LLMs, plus a `.mcart` cartridge format (a model + its metadata, packaged + sha256-verified + loadable from a local cache). Ships:
 
 - **SDK:** `createMachine`, `generateText`, `streamText`, `generateObject`, `tool`, `zodSchema`.
 - **Format:** `.mcart` cartridges (a zip of `manifest.json` + weights file + optional assets).
@@ -21,8 +21,8 @@ npx machine describe cli          # just CLI commands
 npx machine describe sdk          # just SDK API
 npx machine describe manifest     # just manifest schema fields
 npx machine describe catalog      # just catalog schema fields
-npx machine describe ui           # @machine/ui components + hooks
-npx machine describe scaffolder   # @machine/create-machine-app templates
+npx machine describe ui           # @revhappy/ui components + hooks
+npx machine describe scaffolder   # @revhappy/create-machine-app templates
 npx machine describe pointers     # file paths to read for more detail
 ```
 
@@ -80,12 +80,12 @@ npm run check         # typecheck + test + build, in order
 
 Out of scope for single-session work — backends live in separate packages. Open `src/activation/runtimeSelection.ts` to see how detection works, then propose a new backend package rather than editing this one.
 
-### "Add a new UI component to `@machine/ui`"
+### "Add a new UI component to `@revhappy/ui`"
 
 The UI kit is a separate workspace at `packages/ui/`. Root `npm run check` does **not** cover it — use the `*:ui` scripts.
 
 1. Decide the target: `src/web/` (DOM), `src/native/` (React Native), or both. Behavior lives in hooks under `src/core/` — keep web/native files thin.
-2. If the component needs new behavior, add a hook to `packages/ui/src/core/` first. Core must only import from `react` and `@machine/activation-sdk` — never from `react-native` or DOM globals.
+2. If the component needs new behavior, add a hook to `packages/ui/src/core/` first. Core must only import from `react` and `@revhappy/activation-sdk` — never from `react-native` or DOM globals.
 3. Add the component file(s) under `src/web/<Name>.tsx` and/or `src/native/<Name>.tsx`.
 4. Export from the matching `src/web/index.ts` / `src/native/index.ts` barrel.
 5. If the hook/type is consumer-facing, re-export from `packages/ui/src/index.ts`.

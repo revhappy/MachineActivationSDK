@@ -5,7 +5,7 @@ import {
   InferenceIndicator,
   useInference,
   useMachineModel,
-} from '@machine/ui/web';
+} from '@revhappy/ui/web';
 
 const CARTRIDGE_ID = 'dev.machine.gemma-3n-e4b-it';
 

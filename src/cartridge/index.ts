@@ -48,6 +48,6 @@ export type {
 } from './zipAdapter';
 
 // Node-only helpers (createNodeCartridgeFileSystem, createNodeCartridgeZipAdapter,
-// packCartridge, unpackCartridge) live in `@machine/activation-sdk/node` so this
+// packCartridge, unpackCartridge) live in `@revhappy/activation-sdk/node` so this
 // barrel stays browser-safe — importing it from a Vite/Webpack/Rollup app must
 // not pull `node:fs`, `node:path`, `node:crypto`, etc. into the bundle graph.

@@ -38,7 +38,7 @@ test('node-script: substitutes APP_NAME into package.json', () => {
     const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
     assertEqual(pkg.name, 'demo-pkg');
     assert(
-      typeof pkg.dependencies?.['@machine/activation-sdk'] === 'string',
+      typeof pkg.dependencies?.['@revhappy/activation-sdk'] === 'string',
       'activation-sdk dep should be present',
     );
   });

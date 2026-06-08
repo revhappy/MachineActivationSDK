@@ -4,7 +4,7 @@ This note describes the current release path for the Machine Activation SDK.
 
 ## Current Package Identity
 
-- npm package: `@machine/activation-sdk`
+- npm package: `@revhappy/activation-sdk`
 - publish access: `public`
 
 ## Release Verification

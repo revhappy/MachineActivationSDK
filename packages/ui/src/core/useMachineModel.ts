@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { MachineModel, ModelSpec } from '@machine/activation-sdk';
+import type { MachineModel, ModelSpec } from '@revhappy/activation-sdk';
 import { useMachineContext } from './useMachineContext';
 
 function stableSpecKey(spec: ModelSpec | null | undefined): string {

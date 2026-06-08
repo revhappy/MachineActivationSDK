@@ -10,8 +10,8 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "paths": {
-      "@machine/activation-sdk": ["../../src/index.ts"],
-      "@machine/activation-sdk/*": ["../../src/*"]
+      "@revhappy/activation-sdk": ["../../src/index.ts"],
+      "@revhappy/activation-sdk/*": ["../../src/*"]
     }
   },
   "include": ["src/**/*.ts", "tests/**/*.ts"],

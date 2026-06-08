@@ -3,7 +3,7 @@ import type {
   ActivationRuntime,
   ActivationSession,
   ActivationSessionCreateInput,
-} from '@machine/activation-sdk';
+} from '@revhappy/activation-sdk';
 
 const BACKEND_ID = 'web-llm';
 const BACKEND_NAME = '@mlc-ai/web-llm';

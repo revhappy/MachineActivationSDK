@@ -1,7 +1,7 @@
 {
-  "name": "@machine/activation-capacitor",
+  "name": "@revhappy/activation-capacitor",
   "version": "0.2.0-beta.1",
-  "description": "Capacitor (Android) runtime adapter for @machine/activation-sdk. Bridges the LiteRT-LM native plugin to the activation runtime contract.",
+  "description": "Capacitor (Android) runtime adapter for @revhappy/activation-sdk. Bridges the LiteRT-LM native plugin to the activation runtime contract.",
   "license": "MIT",
   "author": "Machine AI Contributors",
   "keywords": [

@@ -3,7 +3,7 @@ import type {
   ActivationRuntime,
   ActivationSession,
   ActivationSessionCreateInput,
-} from '@machine/activation-sdk';
+} from '@revhappy/activation-sdk';
 
 const BACKEND_ID = 'llama.rn';
 const BACKEND_NAME = 'llama.rn';

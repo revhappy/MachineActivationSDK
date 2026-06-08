@@ -38,7 +38,7 @@ export const TEMPLATES: readonly TemplateDescriptor[] = [
   {
     id: 'expo-local-chat',
     displayName: 'Expo local chat',
-    description: 'Expo RN app with streaming on-device chat via llama.rn + @machine/ui/native.',
+    description: 'Expo RN app with streaming on-device chat via llama.rn + @revhappy/ui/native.',
     target: 'expo',
     nextSteps: [
       '{pm} install',
@@ -49,7 +49,7 @@ export const TEMPLATES: readonly TemplateDescriptor[] = [
   {
     id: 'rn-cli-local-chat',
     displayName: 'RN CLI local chat',
-    description: 'Bare React Native (no Expo) with streaming on-device chat via llama.rn + @machine/ui/native.',
+    description: 'Bare React Native (no Expo) with streaming on-device chat via llama.rn + @revhappy/ui/native.',
     target: 'react-native',
     nextSteps: [
       '{pm} install',
@@ -60,7 +60,7 @@ export const TEMPLATES: readonly TemplateDescriptor[] = [
   {
     id: 'next-local-chat',
     displayName: 'Next.js local chat',
-    description: 'Next.js 14 (app router) web app with streaming in-browser chat via @mlc-ai/web-llm + @machine/ui/web.',
+    description: 'Next.js 14 (app router) web app with streaming in-browser chat via @mlc-ai/web-llm + @revhappy/ui/web.',
     target: 'next',
     nextSteps: [
       '{pm} install',
@@ -71,7 +71,7 @@ export const TEMPLATES: readonly TemplateDescriptor[] = [
     id: 'electron-local-chat',
     displayName: 'Electron local chat',
     description:
-      'Electron desktop app: multi-format model picker (.gguf via vendored llama-server subprocess, .task via @mediapipe/tasks-genai in renderer, .litertlm recognized) + @machine/ui hooks. Self-updating llama.cpp via scripts/fetch-llama-cpp.js.',
+      'Electron desktop app: multi-format model picker (.gguf via vendored llama-server subprocess, .task via @mediapipe/tasks-genai in renderer, .litertlm recognized) + @revhappy/ui hooks. Self-updating llama.cpp via scripts/fetch-llama-cpp.js.',
     target: 'electron',
     nextSteps: [
       '{pm} install',

@@ -2,7 +2,7 @@ import * as React from 'react';
 import type {
   ActivationCapabilitySnapshot,
   MachineModel,
-} from '@machine/activation-sdk';
+} from '@revhappy/activation-sdk';
 import type { ActivationSnapshotStatus } from './types';
 
 export interface UseActivationSnapshotReturn {

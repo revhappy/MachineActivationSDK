@@ -1,7 +1,7 @@
 // The Capacitor runtime adapter only loads inside an Android shell with the
 // native plugin available, so there is nothing meaningful to exercise in
 // Node. The compile pass (`tsc -p tsconfig.tests.json`) already proves the
-// package's TypeScript surface lines up against `@machine/activation-sdk`'s
+// package's TypeScript surface lines up against `@revhappy/activation-sdk`'s
 // types. This script just verifies the build emitted the expected entry
 // files so a packaging regression would be caught.
 import { existsSync } from 'node:fs';

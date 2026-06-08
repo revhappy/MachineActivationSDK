@@ -16,7 +16,7 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { llamaServerRuntime, disposeLlamaServer } from './llamaServerRuntime';
-import { createMachine, type Machine } from '@machine/activation-sdk';
+import { createMachine, type Machine } from '@revhappy/activation-sdk';
 import type { MachineCompleteArgs } from './preload-types';
 import { readConfig, writeConfig } from './config';
 

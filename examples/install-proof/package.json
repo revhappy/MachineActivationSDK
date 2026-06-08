@@ -2,16 +2,16 @@
   "name": "machine-activation-sdk-install-proof",
   "private": true,
   "version": "0.0.1",
-  "description": "Installs the four @machine/* tarballs into a clean scratch consumer to prove the published shape end-to-end (no public registry).",
+  "description": "Installs the four @revhappy/* tarballs into a clean scratch consumer to prove the published shape end-to-end (no public registry).",
   "scripts": {
     "check": "tsc -p tsconfig.json --noEmit",
     "demo": "tsc -p tsconfig.json && node ./dist/index.js"
   },
   "dependencies": {
-    "@machine/activation-capacitor": "file:../../.pack/machine-activation-capacitor-0.2.0-beta.1.tgz",
-    "@machine/activation-sdk": "file:../..",
-    "@machine/create-machine-app": "file:../../.pack/machine-create-machine-app-0.2.0-beta.1.tgz",
-    "@machine/ui": "file:../../.pack/machine-ui-0.2.0-beta.1.tgz"
+    "@revhappy/activation-capacitor": "file:../../.pack/machine-activation-capacitor-0.2.0-beta.1.tgz",
+    "@revhappy/activation-sdk": "file:../..",
+    "@revhappy/create-machine-app": "file:../../.pack/machine-create-machine-app-0.2.0-beta.1.tgz",
+    "@revhappy/ui": "file:../../.pack/machine-ui-0.2.0-beta.1.tgz"
   },
   "devDependencies": {
     "@capacitor/core": "^6.1.2",

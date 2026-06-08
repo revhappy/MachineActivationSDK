@@ -42,7 +42,7 @@ test('rn-cli-local-chat: substitutes APP_NAME into package.json + app.json', () 
     assertEqual(pkg.name, 'my-rn');
     assert(pkg.dependencies?.['react-native'] !== undefined, 'react-native dep present');
     assert(pkg.dependencies?.['llama.rn'] !== undefined, 'llama.rn dep present');
-    assert(pkg.dependencies?.['@machine/ui'] !== undefined, '@machine/ui dep present');
+    assert(pkg.dependencies?.['@revhappy/ui'] !== undefined, '@revhappy/ui dep present');
     assert(
       pkg.devDependencies?.['@react-native/metro-config'] !== undefined,
       '@react-native/metro-config devDep present',
@@ -64,11 +64,11 @@ test('rn-cli-local-chat: App.tsx wires MachineProvider + llamaRuntime', () => {
   });
 });
 
-test('rn-cli-local-chat: ChatScreen uses @machine/ui/native hooks', () => {
+test('rn-cli-local-chat: ChatScreen uses @revhappy/ui/native hooks', () => {
   withTempDir((tmp) => {
     runCli(['b', '-t', 'rn-cli-local-chat', '-y'], { cwd: tmp });
     const source = readFileSync(join(tmp, 'b', 'src', 'ChatScreen.tsx'), 'utf8');
-    assert(source.includes('@machine/ui/native'), 'should import from @machine/ui/native');
+    assert(source.includes('@revhappy/ui/native'), 'should import from @revhappy/ui/native');
     assert(source.includes('useInference'), 'should use useInference');
     assert(source.includes('useMachineModel'), 'should use useMachineModel');
     assert(source.includes('InferenceIndicator'), 'should render InferenceIndicator');

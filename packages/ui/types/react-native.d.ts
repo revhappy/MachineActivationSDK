@@ -1,4 +1,4 @@
-// Minimal type stub so @machine/ui typechecks without installing
+// Minimal type stub so @revhappy/ui typechecks without installing
 // react-native (~200 MB). Consumers who target React Native install
 // the real react-native package — at that point its bundled types
 // supersede these declarations.

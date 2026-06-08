@@ -1,8 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { createMachine, type Machine } from '@machine/activation-sdk';
-import { MachineProvider } from '@machine/ui/web';
+import { createMachine, type Machine } from '@revhappy/activation-sdk';
+import { MachineProvider } from '@revhappy/ui/web';
 import { webLlmRuntime } from '@/lib/webLlmRuntime';
 import { ChatScreen } from './ChatScreen';
 

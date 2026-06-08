@@ -1,7 +1,7 @@
 {
-  "name": "@machine/create-machine-app",
+  "name": "@revhappy/create-machine-app",
   "version": "0.2.0-beta.1",
-  "description": "Scaffold a local-LLM app (Expo / RN / Next / Electron / Node) preconfigured for @machine/activation-sdk.",
+  "description": "Scaffold a local-LLM app (Expo / RN / Next / Electron / Node) preconfigured for @revhappy/activation-sdk.",
   "license": "MIT",
   "author": "Machine AI Contributors",
   "keywords": [

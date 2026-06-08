@@ -20,14 +20,14 @@ In a brand-new scratch directory (outside this repo), prove the published artifa
 ```bash
 mkdir /tmp/machine-smoke && cd /tmp/machine-smoke
 npm init -y
-npm install @machine/activation-sdk@0.2.0-beta.1 \
-            @machine/ui@0.2.0-beta.1 \
-            @machine/create-machine-app@0.2.0-beta.1 \
-            @machine/activation-capacitor@0.2.0-beta.1
-node -e "console.log(require('@machine/activation-sdk').createMachine)"
+npm install @revhappy/activation-sdk@0.2.0-beta.1 \
+            @revhappy/ui@0.2.0-beta.1 \
+            @revhappy/create-machine-app@0.2.0-beta.1 \
+            @revhappy/activation-capacitor@0.2.0-beta.1
+node -e "console.log(require('@revhappy/activation-sdk').createMachine)"
 ```
 
-If any of these 404 from the registry, the publish didn't propagate — wait a minute and retry. If a peer-dependency warning appears about `@machine/activation-sdk`, ignore it (see *Known peer-dep range trade-off* below).
+If any of these 404 from the registry, the publish didn't propagate — wait a minute and retry. If a peer-dependency warning appears about `@revhappy/activation-sdk`, ignore it (see *Known peer-dep range trade-off* below).
 
 ## 3. Replace `file:` deps in the reference apps with published version ranges
 
@@ -40,15 +40,15 @@ Path: `Second Brain - Activation SDK\`
 In its `package.json` (and any nested workspaces), find dependency entries that look like:
 
 ```json
-"@machine/activation-sdk": "file:../Machine AI/iterations/MachineActivationSDK",
-"@machine/ui": "file:../Machine AI/iterations/MachineActivationSDK/packages/ui"
+"@revhappy/activation-sdk": "file:../Machine AI/iterations/MachineActivationSDK",
+"@revhappy/ui": "file:../Machine AI/iterations/MachineActivationSDK/packages/ui"
 ```
 
 Replace each with:
 
 ```json
-"@machine/activation-sdk": "^0.2.0-beta.1",
-"@machine/ui": "^0.2.0-beta.1"
+"@revhappy/activation-sdk": "^0.2.0-beta.1",
+"@revhappy/ui": "^0.2.0-beta.1"
 ```
 
 Note: `^0.2.0-beta.1` only matches **prereleases of `0.2.0`** by npm semver rules. Once `0.2.0` stable ships, the range will continue to match `0.2.0` stable but not `0.2.1-beta.1`. That's fine for a beta train — bump the range when you bump the prerelease line.
@@ -65,7 +65,7 @@ Confirm the reference app still launches, the model picker works, and inference 
 
 ### Reference App 01 — Ingredient Analyzer
 
-Same procedure. The capacitor adapter (`@machine/activation-capacitor`) replaces the previously-vendored ~570 LOC of Capacitor + LiteRT-LM glue if the app uses Capacitor. See the app's `ACTIVATION_SDK_INTEGRATION_CHECKPOINT.md` for host-app Gradle/Kotlin pieces that **stay** in the host app and aren't packaged.
+Same procedure. The capacitor adapter (`@revhappy/activation-capacitor`) replaces the previously-vendored ~570 LOC of Capacitor + LiteRT-LM glue if the app uses Capacitor. See the app's `ACTIVATION_SDK_INTEGRATION_CHECKPOINT.md` for host-app Gradle/Kotlin pieces that **stay** in the host app and aren't packaged.
 
 ## 4. Update the CI workflow for the reference apps (if applicable)
 
@@ -87,20 +87,20 @@ Make sure `package-lock.json` is committed with the new resolved `https://regist
 
 ## Known peer-dep range trade-off
 
-`@machine/activation-capacitor` declares its peer dep on `@machine/activation-sdk` as `"*"` (and `@machine/ui` declares no explicit dep on the SDK — only imports it). This is because the SDK lives at the **repo root**, which npm does not treat as a workspace — declaring a stricter range (e.g. `>=0.2.0-beta.1 <0.3.0`) makes npm try to resolve the SDK from the public registry at install time, which fails with E404 even after publish (because npm only sees the workspace symlink in dev, not the registry entry until install resolves it).
+`@revhappy/activation-capacitor` declares its peer dep on `@revhappy/activation-sdk` as `"*"` (and `@revhappy/ui` declares no explicit dep on the SDK — only imports it). This is because the SDK lives at the **repo root**, which npm does not treat as a workspace — declaring a stricter range (e.g. `>=0.2.0-beta.1 <0.3.0`) makes npm try to resolve the SDK from the public registry at install time, which fails with E404 even after publish (because npm only sees the workspace symlink in dev, not the registry entry until install resolves it).
 
-Consumer impact: anyone installing `@machine/activation-capacitor` will be warned (without a hard error) that `@machine/activation-sdk` is needed. Anyone installing `@machine/ui` won't be warned at all — they discover the SDK requirement from the docs (this file, `MIGRATION.md`, `PACKAGE_CONSUMPTION.md`).
+Consumer impact: anyone installing `@revhappy/activation-capacitor` will be warned (without a hard error) that `@revhappy/activation-sdk` is needed. Anyone installing `@revhappy/ui` won't be warned at all — they discover the SDK requirement from the docs (this file, `MIGRATION.md`, `PACKAGE_CONSUMPTION.md`).
 
 A stricter, registry-resolvable range becomes possible if the SDK is later restructured into `packages/activation-sdk/` (turning the repo root into a private orchestration meta-package). That refactor is out of scope for M9 but is a clean follow-up.
 
 ## 6. Watch for downstream issues
 
 - Track install errors in CI logs for any consumer using the packages.
-- Watch [npm package pages](https://www.npmjs.com/package/@machine/activation-sdk) for the first weekly downloads tick — that's the public-adoption signal `PUBLISHING.md` calls out as "not yet exercised publicly."
+- Watch [npm package pages](https://www.npmjs.com/package/@revhappy/activation-sdk) for the first weekly downloads tick — that's the public-adoption signal `PUBLISHING.md` calls out as "not yet exercised publicly."
 - File issues against this repo for any concrete regressions found in the smoke-test or in the reference apps.
 
 ## 7. If something goes wrong
 
 - **Wrong file shipped:** publish a patch version (`0.2.0-beta.2`) with the fix. Don't `npm unpublish` after 72 hours — npm doesn't truly remove a package and the name stays burned.
-- **Critical bug:** add a deprecation message: `npm deprecate @machine/activation-sdk@0.2.0-beta.1 "Upgrade to 0.2.0-beta.2 — beta.1 had X"`.
+- **Critical bug:** add a deprecation message: `npm deprecate @revhappy/activation-sdk@0.2.0-beta.1 "Upgrade to 0.2.0-beta.2 — beta.1 had X"`.
 - **Lockfile drift in reference apps:** clear `node_modules` + `package-lock.json` and reinstall. The published packages will resolve from the registry now.

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { CatalogEntry } from '@machine/activation-sdk';
+import type { CatalogEntry } from '@revhappy/activation-sdk';
 import { useCartridgeFilter } from '../core/useCartridgeFilter';
 import { formatBytes } from '../core/formatBytes';
 

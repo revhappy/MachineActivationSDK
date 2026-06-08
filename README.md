@@ -6,14 +6,14 @@ Its purpose is to let developers plug a local model into an app like a cartridge
 
 The public package name is:
 
-- `@machine/activation-sdk`
+- `@revhappy/activation-sdk`
 
 ## Fast Start
 
 If you're coming from the Vercel AI SDK, OpenAI SDK, or Anthropic SDK, the drop-in API is the best starting point:
 
 ```ts
-import { createMachine, generateText, streamText, generateObject, tool } from '@machine/activation-sdk';
+import { createMachine, generateText, streamText, generateObject, tool } from '@revhappy/activation-sdk';
 
 const machine = createMachine({ runtimes: [yourRuntimeAdapter] });
 const model = machine.model({ filePath: '/models/gemma.gguf' });
@@ -329,7 +329,7 @@ Apps can also make capability truth less guess-based over time:
 import {
   createInMemoryObservedCapabilityStore,
   createMachineActivationSdk,
-} from '@machine/activation-sdk';
+} from '@revhappy/activation-sdk';
 
 const sdk = createMachineActivationSdk(runtime, {
   observedCapabilityStore: createInMemoryObservedCapabilityStore(),
@@ -348,7 +348,7 @@ And if a developer needs to teach the SDK about a new model family before a back
 import {
   createActivationCapabilityRegistry,
   createMachineActivationSdk,
-} from '@machine/activation-sdk';
+} from '@revhappy/activation-sdk';
 
 const registry = createActivationCapabilityRegistry([
   {
@@ -421,7 +421,7 @@ import {
   createActivationModelSetupController,
   createJsonActivationModelConfigStorage,
   LITERT_LM_ANDROID_PRESET,
-} from '@machine/activation-sdk';
+} from '@revhappy/activation-sdk';
 
 const storage = createJsonActivationModelConfigStorage({
   storageKey: 'myapp.machineActivation.modelConfig',

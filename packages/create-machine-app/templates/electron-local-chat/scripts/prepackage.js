@@ -1,5 +1,5 @@
 // Removes symlinked workspace deps before electron-builder packages the app.
-// Main process is bundled with esbuild, so the @machine/* deps are inlined into
+// Main process is bundled with esbuild, so the @revhappy/* deps are inlined into
 // dist/electron/main.js. The symlinks would otherwise point outside the app
 // root and trip electron-builder's path-must-be-under-app-root assertion.
 

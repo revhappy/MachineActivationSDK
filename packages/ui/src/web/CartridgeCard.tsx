@@ -2,7 +2,7 @@ import * as React from 'react';
 import type {
   CartridgeManifest,
   CatalogEntry,
-} from '@machine/activation-sdk';
+} from '@revhappy/activation-sdk';
 import { formatBytes } from '../core/formatBytes';
 
 export interface CartridgeCardProps {

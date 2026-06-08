@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { SafeAreaView, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { createMachine, type Machine } from '@machine/activation-sdk';
-import { MachineProvider } from '@machine/ui/native';
+import { createMachine, type Machine } from '@revhappy/activation-sdk';
+import { MachineProvider } from '@revhappy/ui/native';
 
 import { llamaRuntime } from './llamaRuntime';
 import { ChatScreen } from './ChatScreen';

@@ -10,10 +10,10 @@ const npmExecutable = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 //   3. create-machine-app — no runtime dep, scaffolder
 //   4. activation-capacitor — peer-depends on activation-sdk
 const workspaces = [
-  { name: '@machine/activation-sdk', cwd: rootDir },
-  { name: '@machine/ui', cwd: path.join(rootDir, 'packages', 'ui') },
-  { name: '@machine/create-machine-app', cwd: path.join(rootDir, 'packages', 'create-machine-app') },
-  { name: '@machine/activation-capacitor', cwd: path.join(rootDir, 'packages', 'activation-capacitor') },
+  { name: '@revhappy/activation-sdk', cwd: rootDir },
+  { name: '@revhappy/ui', cwd: path.join(rootDir, 'packages', 'ui') },
+  { name: '@revhappy/create-machine-app', cwd: path.join(rootDir, 'packages', 'create-machine-app') },
+  { name: '@revhappy/activation-capacitor', cwd: path.join(rootDir, 'packages', 'activation-capacitor') },
 ];
 
 const sharedEnv = {

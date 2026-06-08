@@ -6,7 +6,7 @@ import {
   type StreamTextOptions,
   type StreamTextResult,
   type UsageInfo,
-} from '@machine/activation-sdk';
+} from '@revhappy/activation-sdk';
 import type { InferenceStatus, UseInferenceReturn } from './types';
 
 export function useInference(
