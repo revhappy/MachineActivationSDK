@@ -202,13 +202,13 @@ test('electron-local-chat: preload exposes window.machine and window.config', ()
   });
 });
 
-test('electron-local-chat: ChatScreen uses @revhappy/ui hooks (root, not /web)', () => {
+test('electron-local-chat: ChatScreen uses machineai-activation-ui hooks (root, not /web)', () => {
   withTempDir((tmp) => {
     runCli(['d', '-t', 'electron-local-chat', '-y'], { cwd: tmp });
     const source = readFileSync(join(tmp, 'd', 'src', 'ChatScreen.tsx'), 'utf8');
     assert(
-      source.includes("from '@revhappy/ui'") && !source.includes("from '@revhappy/ui/web'"),
-      'imports from @revhappy/ui root (the /web subpath only has visual components, not hooks)',
+      source.includes("from 'machineai-activation-ui'") && !source.includes("from 'machineai-activation-ui/web'"),
+      'imports from machineai-activation-ui root (the /web subpath only has visual components, not hooks)',
     );
     assert(source.includes('useMachineModel'), 'uses useMachineModel');
     assert(source.includes('streamText'), 'uses streamText for direct streaming');

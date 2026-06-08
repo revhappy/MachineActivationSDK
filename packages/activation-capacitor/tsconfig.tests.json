@@ -7,8 +7,8 @@
     "declaration": false,
     "rootDir": "../..",
     "paths": {
-      "@revhappy/activation-sdk": ["../../src/index.ts"],
-      "@revhappy/activation-sdk/*": ["../../src/*"]
+      "machineai-activation": ["../../src/index.ts"],
+      "machineai-activation/*": ["../../src/*"]
     }
   },
   "include": ["src/**/*.ts", "tests/**/*.ts"]

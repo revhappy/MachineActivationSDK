@@ -4,7 +4,7 @@ import {
   LITERT_LM_ANDROID_PRESET,
   pickActivationModelConfig,
   type ActivationModelFilePicker,
-} from '@revhappy/activation-sdk';
+} from 'machineai-activation';
 
 const capacitorActivationModelFilePicker: ActivationModelFilePicker = {
   async pickModelFile() {

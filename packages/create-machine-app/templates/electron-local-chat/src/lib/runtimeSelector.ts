@@ -1,4 +1,4 @@
-import type { ActivationRuntime } from '@revhappy/activation-sdk';
+import type { ActivationRuntime } from 'machineai-activation';
 import { ipcRuntime } from '../ipcRuntime';
 import { mediaPipeRuntime } from './mediaPipeRuntime';
 

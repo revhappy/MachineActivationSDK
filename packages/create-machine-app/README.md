@@ -1,11 +1,11 @@
-# @revhappy/create-machine-app
+# create-machineai-app
 
-Scaffold a local-LLM app preconfigured for [`@revhappy/activation-sdk`](https://github.com/machine-ai/activation-sdk).
+Scaffold a local-LLM app preconfigured for [`machineai-activation`](https://github.com/machine-ai/activation-sdk).
 
 ```sh
-npx @revhappy/create-machine-app my-app
+npx create-machineai-app my-app
 # or pick a template up-front:
-npx @revhappy/create-machine-app my-app --template node-script
+npx create-machineai-app my-app --template node-script
 ```
 
 ## Templates
@@ -13,7 +13,7 @@ npx @revhappy/create-machine-app my-app --template node-script
 | id | target | what it is |
 |---|---|---|
 | `node-script` | Node 20+ | Minimal TypeScript CLI that runs one-shot inference against a local cartridge. Good for prototyping. |
-| `expo-local-chat` | Expo / React Native | Streaming chat UI on-device via `llama.rn`. Built on `@revhappy/ui/native`. |
+| `expo-local-chat` | Expo / React Native | Streaming chat UI on-device via `llama.rn`. Built on `machineai-activation-ui/native`. |
 
 More templates (`rn-cli-local-chat`, `next-local-chat`, `electron-local-chat`) land in a later release.
 

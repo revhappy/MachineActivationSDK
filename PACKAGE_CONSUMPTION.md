@@ -6,7 +6,7 @@ This note explains how the Machine Activation SDK should be consumed today and w
 
 Current package name:
 
-- `@revhappy/activation-sdk`
+- `machineai-activation`
 
 Current status:
 
@@ -28,7 +28,7 @@ Current package file:
 Inside this project, and from external consumer projects, consumers should import the SDK through:
 
 ```ts
-import { createMachineActivationSdk } from '@revhappy/activation-sdk';
+import { createMachineActivationSdk } from 'machineai-activation';
 ```
 
 That is the intended consumption style.

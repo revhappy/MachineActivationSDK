@@ -41,7 +41,7 @@ test('next-local-chat: substitutes APP_NAME into package.json', () => {
     assertEqual(pkg.name, 'my-next');
     assert(pkg.dependencies?.next !== undefined, 'next dep present');
     assert(pkg.dependencies?.['@mlc-ai/web-llm'] !== undefined, '@mlc-ai/web-llm dep present');
-    assert(pkg.dependencies?.['@revhappy/ui'] !== undefined, '@revhappy/ui dep present');
+    assert(pkg.dependencies?.['machineai-activation-ui'] !== undefined, 'machineai-activation-ui dep present');
   });
 });
 
@@ -70,27 +70,27 @@ test('next-local-chat: page.tsx wires MachineProvider + webLlmRuntime', () => {
   });
 });
 
-test('next-local-chat: ChatScreen uses @revhappy/ui/web hooks', () => {
+test('next-local-chat: ChatScreen uses machineai-activation-ui/web hooks', () => {
   withTempDir((tmp) => {
     runCli(['c', '-t', 'next-local-chat', '-y'], { cwd: tmp });
     const source = readFileSync(
       join(tmp, 'c', 'src', 'app', 'ChatScreen.tsx'),
       'utf8',
     );
-    assert(source.includes('@revhappy/ui/web'), 'should import from @revhappy/ui/web');
+    assert(source.includes('machineai-activation-ui/web'), 'should import from machineai-activation-ui/web');
     assert(source.includes('useInference'), 'should use useInference');
     assert(source.includes('useMachineModel'), 'should use useMachineModel');
     assert(source.includes('InferenceIndicator'), 'should render InferenceIndicator');
   });
 });
 
-test('next-local-chat: next.config.js transpiles @revhappy/* workspaces', () => {
+test('next-local-chat: next.config.js transpiles machineai-activation-* workspaces', () => {
   withTempDir((tmp) => {
     runCli(['d', '-t', 'next-local-chat', '-y'], { cwd: tmp });
     const source = readFileSync(join(tmp, 'd', 'next.config.js'), 'utf8');
     assert(source.includes('transpilePackages'), 'next.config.js sets transpilePackages');
-    assert(source.includes('@revhappy/activation-sdk'), 'transpiles @revhappy/activation-sdk');
-    assert(source.includes('@revhappy/ui'), 'transpiles @revhappy/ui');
+    assert(source.includes('machineai-activation'), 'transpiles machineai-activation');
+    assert(source.includes('machineai-activation-ui'), 'transpiles machineai-activation-ui');
   });
 });
 

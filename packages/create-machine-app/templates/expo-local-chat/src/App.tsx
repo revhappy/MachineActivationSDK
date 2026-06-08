@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { SafeAreaView, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { createMachine, type Machine } from '@revhappy/activation-sdk';
-import { MachineProvider } from '@revhappy/ui/native';
+import { createMachine, type Machine } from 'machineai-activation';
+import { MachineProvider } from 'machineai-activation-ui/native';
 
 import { llamaRuntime } from './llamaRuntime';
 import { ChatScreen } from './ChatScreen';

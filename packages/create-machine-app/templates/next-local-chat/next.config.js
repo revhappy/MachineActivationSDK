@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  transpilePackages: ['@revhappy/activation-sdk', '@revhappy/ui'],
+  transpilePackages: ['machineai-activation', 'machineai-activation-ui'],
 };
 
 module.exports = nextConfig;

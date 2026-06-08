@@ -1,11 +1,11 @@
 # Migration Guide
 
 > Coming from Vercel AI SDK, OpenAI SDK, or Anthropic SDK?
-> This is the shortest path from cloud LLM to **the same app running locally** with `@revhappy/activation-sdk`.
+> This is the shortest path from cloud LLM to **the same app running locally** with `machineai-activation`.
 
 ## The promise
 
-The drop-in API of `@revhappy/activation-sdk` matches the Vercel AI SDK shape verbatim — `createMachine`, `generateText`, `streamText`, `generateObject`, `tool`. For Vercel AI SDK users this is a **one-import swap**. For OpenAI / Anthropic users it's a small refactor that mostly removes provider-specific scaffolding.
+The drop-in API of `machineai-activation` matches the Vercel AI SDK shape verbatim — `createMachine`, `generateText`, `streamText`, `generateObject`, `tool`. For Vercel AI SDK users this is a **one-import swap**. For OpenAI / Anthropic users it's a small refactor that mostly removes provider-specific scaffolding.
 
 What stays the same: your UI, your prompts, your schemas (any Zod-shaped schema works — Zod is an optional peer dep), your tool definitions, your streaming UX.
 
@@ -36,7 +36,7 @@ import {
   streamText,
   generateObject,
   tool,
-} from '@revhappy/activation-sdk';
+} from 'machineai-activation';
 import { llamaRnRuntime } from './activationRuntime'; // your adapter
 
 const machine = createMachine({ runtimes: [llamaRnRuntime] });
@@ -74,7 +74,7 @@ const text = completion.choices[0].message.content;
 New:
 
 ```ts
-import { createMachine, generateText } from '@revhappy/activation-sdk';
+import { createMachine, generateText } from 'machineai-activation';
 import { llamaRnRuntime } from './activationRuntime';
 
 const machine = createMachine({ runtimes: [llamaRnRuntime] });
@@ -126,7 +126,7 @@ const text = msg.content[0].type === 'text' ? msg.content[0].text : '';
 New:
 
 ```ts
-import { createMachine, generateText } from '@revhappy/activation-sdk';
+import { createMachine, generateText } from 'machineai-activation';
 import { llamaRnRuntime } from './activationRuntime';
 
 const machine = createMachine({ runtimes: [llamaRnRuntime] });
@@ -146,12 +146,12 @@ Streaming, structured output, and tool calling translate identically to the Open
 
 ## What you need to add: the runtime adapter
 
-Local inference needs *some* backend. `@revhappy/activation-sdk` is backend-agnostic — you bring the engine, the SDK handles capability resolution, session management, streaming, GBNF grammar for structured output, and the ReAct loop for tools.
+Local inference needs *some* backend. `machineai-activation` is backend-agnostic — you bring the engine, the SDK handles capability resolution, session management, streaming, GBNF grammar for structured output, and the ReAct loop for tools.
 
 A minimal adapter:
 
 ```ts
-import type { ActivationRuntime, ActivationSession } from '@revhappy/activation-sdk';
+import type { ActivationRuntime, ActivationSession } from 'machineai-activation';
 
 export const myRuntime: ActivationRuntime = {
   id: 'my.runtime',
@@ -175,7 +175,7 @@ Two production reference apps prove the end-to-end shape; both are pure Machine-
 - **Ingredient Analyzer** (the first reference port).
 - **Second Brain** (a local conversational notebook on Electron) at `Second Brain - Activation SDK\`.
 
-Five scaffolder templates ship with `@revhappy/create-machine-app` — pick the closest match and copy the runtime adapter from it:
+Five scaffolder templates ship with `create-machineai-app` — pick the closest match and copy the runtime adapter from it:
 
 | Template | Backend | Adapter source to copy |
 |---|---|---|
@@ -185,7 +185,7 @@ Five scaffolder templates ship with `@revhappy/create-machine-app` — pick the 
 | `electron-local-chat` | `llama-server` subprocess (and MediaPipe `.task` via WASM) | `electron/llamaServerRuntime.ts`, `src/mediaPipeRuntime.ts` |
 | `node-script` | Node-resolved cartridge | `src/llamaRuntime.ts` |
 
-Run `npx @revhappy/create-machine-app my-app` and pick a template, or vendor the adapter file into your existing project.
+Run `npx create-machineai-app my-app` and pick a template, or vendor the adapter file into your existing project.
 
 ---
 
@@ -203,7 +203,7 @@ Below is the honest list of differences — the SDK does **not** pretend cloud a
 
 ## API parity table
 
-| Vercel AI SDK | `@revhappy/activation-sdk` | Notes |
+| Vercel AI SDK | `machineai-activation` | Notes |
 |---|---|---|
 | `generateText({ model, prompt, system, messages, maxTokens, stopSequences, tools, maxSteps })` | same shape | identical call site after import swap |
 | `streamText({ model, prompt }).textStream` | same | async iterable of deltas |
@@ -219,7 +219,7 @@ Below is the honest list of differences — the SDK does **not** pretend cloud a
 The drop-in API hides the activation contract behind sensible defaults. If you want explicit pre-flight or onboarding logic:
 
 ```ts
-import { createMachineActivationSdk } from '@revhappy/activation-sdk';
+import { createMachineActivationSdk } from 'machineai-activation';
 
 const client = createMachineActivationSdk(runtime).createActivationClient();
 

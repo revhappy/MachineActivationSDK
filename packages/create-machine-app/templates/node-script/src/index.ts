@@ -4,8 +4,8 @@ import {
   type ActivationRuntime,
   type ActivationSession,
   type ActivationSessionCreateInput,
-} from '@revhappy/activation-sdk';
-import { createNodeCartridgeResolver } from '@revhappy/activation-sdk/node';
+} from 'machineai-activation';
+import { createNodeCartridgeResolver } from 'machineai-activation/node';
 
 const CATALOG_URL = 'https://catalog.machine.ai/catalog.json';
 const CARTRIDGE_ID = 'dev.machine.gemma-3n-e4b-it';

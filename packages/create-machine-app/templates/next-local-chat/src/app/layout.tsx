@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 
 export const metadata: Metadata = {
   title: 'Local chat',
-  description: 'Streaming on-device chat in the browser via @mlc-ai/web-llm + @revhappy/ui.',
+  description: 'Streaming on-device chat in the browser via @mlc-ai/web-llm + machineai-activation-ui.',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }): JSX.Element {

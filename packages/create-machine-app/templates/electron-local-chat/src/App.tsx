@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { createMachine, type Machine } from '@revhappy/activation-sdk';
-import { MachineProvider } from '@revhappy/ui';
+import { createMachine, type Machine } from 'machineai-activation';
+import { MachineProvider } from 'machineai-activation-ui';
 import { ChatScreen } from './ChatScreen';
 import { SetupScreen } from './SetupScreen';
 import { selectRuntimeForModel, detectModelFormat } from './lib/runtimeSelector';

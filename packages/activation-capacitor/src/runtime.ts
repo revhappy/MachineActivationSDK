@@ -17,7 +17,7 @@ import {
   type DeviceCapabilityDeclaration,
   type ModelCapabilityDeclaration,
   type ResolvedCapabilityContract,
-} from '@revhappy/activation-sdk';
+} from 'machineai-activation';
 import {
   isMachineActivationPluginAvailable,
   MachineActivationNative,

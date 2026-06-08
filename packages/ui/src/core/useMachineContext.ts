@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { Machine } from '@revhappy/activation-sdk';
+import type { Machine } from 'machineai-activation';
 import { MachineContext } from './MachineProvider';
 
 export function useMachineContext(): Machine {

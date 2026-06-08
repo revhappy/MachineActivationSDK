@@ -4,7 +4,7 @@ import type {
   ActivationRuntime,
   ActivationSession,
   ActivationSessionCreateInput,
-} from '@revhappy/activation-sdk';
+} from 'machineai-activation';
 
 const BACKEND_ID = 'electron-ipc';
 const BACKEND_NAME = 'Electron IPC bridge';

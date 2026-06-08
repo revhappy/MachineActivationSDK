@@ -42,7 +42,7 @@ test('expo-local-chat: substitutes APP_NAME into package.json + app.json', () =>
     assertEqual(pkg.name, 'my-expo');
     assert(pkg.dependencies?.expo !== undefined, 'expo dep present');
     assert(pkg.dependencies?.['llama.rn'] !== undefined, 'llama.rn dep present');
-    assert(pkg.dependencies?.['@revhappy/ui'] !== undefined, '@revhappy/ui dep present');
+    assert(pkg.dependencies?.['machineai-activation-ui'] !== undefined, 'machineai-activation-ui dep present');
 
     const appJson = JSON.parse(readFileSync(join(appDir, 'app.json'), 'utf8'));
     assertEqual(appJson.expo.name, 'my-expo');
@@ -60,11 +60,11 @@ test('expo-local-chat: App.tsx wires MachineProvider + llamaRuntime', () => {
   });
 });
 
-test('expo-local-chat: ChatScreen uses @revhappy/ui/native hooks', () => {
+test('expo-local-chat: ChatScreen uses machineai-activation-ui/native hooks', () => {
   withTempDir((tmp) => {
     runCli(['b', '-t', 'expo-local-chat', '-y'], { cwd: tmp });
     const source = readFileSync(join(tmp, 'b', 'src', 'ChatScreen.tsx'), 'utf8');
-    assert(source.includes('@revhappy/ui/native'), 'should import from @revhappy/ui/native');
+    assert(source.includes('machineai-activation-ui/native'), 'should import from machineai-activation-ui/native');
     assert(source.includes('useInference'), 'should use useInference');
     assert(source.includes('useMachineModel'), 'should use useMachineModel');
     assert(source.includes('InferenceIndicator'), 'should render InferenceIndicator');

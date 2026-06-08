@@ -19,7 +19,7 @@ const VERSION = '0.1.0-alpha.1';
 const HELP = `\
 create-machine-app [app-name] [--template <id>] [--pm <npm|pnpm|yarn>] [--yes] [--force]
 
-Scaffold a local-LLM app preconfigured for @revhappy/activation-sdk.
+Scaffold a local-LLM app preconfigured for machineai-activation.
 
 Templates:
 ${TEMPLATES.map((t) => `  ${t.id.padEnd(18)} ${t.description}`).join('\n')}

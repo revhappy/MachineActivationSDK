@@ -1,4 +1,4 @@
-import type { CatalogEntry } from '@revhappy/activation-sdk';
+import type { CatalogEntry } from 'machineai-activation';
 import { filterCartridges } from '../../src/core/useCartridgeFilter';
 import { assert, assertEqual, test } from '../_harness';
 

@@ -8,7 +8,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import type { CatalogEntry } from '@revhappy/activation-sdk';
+import type { CatalogEntry } from 'machineai-activation';
 import { useCartridgeFilter } from '../core/useCartridgeFilter';
 import { formatBytes } from '../core/formatBytes';
 

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { ActivationCapabilitySnapshot } from '@revhappy/activation-sdk';
+import type { ActivationCapabilitySnapshot } from 'machineai-activation';
 
 export interface ActivationStatusProps {
   snapshot: ActivationCapabilitySnapshot;

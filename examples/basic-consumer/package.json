@@ -7,7 +7,7 @@
     "check": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@revhappy/activation-sdk": "file:../.."
+    "machineai-activation": "file:../.."
   },
   "devDependencies": {
     "typescript": "^5.6.3"

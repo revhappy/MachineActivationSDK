@@ -33,27 +33,27 @@ jobs:
       # Publish steps only fire on a real release tag. workflow_dispatch runs the
       # verification above but stops short of publishing — that's the dry-run path.
       # Publish order matches dependency direction: activation-sdk first because
-      # @revhappy/ui and @revhappy/activation-capacitor peer-depend on it.
-      - name: Publish @revhappy/activation-sdk
+      # machineai-activation-ui and machineai-activation-capacitor peer-depend on it.
+      - name: Publish machineai-activation
         if: startsWith(github.ref, 'refs/tags/activation-sdk-v')
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --access public
 
-      - name: Publish @revhappy/ui
+      - name: Publish machineai-activation-ui
         if: startsWith(github.ref, 'refs/tags/activation-sdk-v')
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --workspace @revhappy/ui --access public
+        run: npm publish --workspace machineai-activation-ui --access public
 
-      - name: Publish @revhappy/create-machine-app
+      - name: Publish create-machineai-app
         if: startsWith(github.ref, 'refs/tags/activation-sdk-v')
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --workspace @revhappy/create-machine-app --access public
+        run: npm publish --workspace create-machineai-app --access public
 
-      - name: Publish @revhappy/activation-capacitor
+      - name: Publish machineai-activation-capacitor
         if: startsWith(github.ref, 'refs/tags/activation-sdk-v')
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --workspace @revhappy/activation-capacitor --access public
+        run: npm publish --workspace machineai-activation-capacitor --access public

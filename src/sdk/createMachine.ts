@@ -94,7 +94,7 @@ export function createMachine(options: CreateMachineOptions): Machine {
           throw new Error(
             'createMachine({ cartridge: "..." }) requires a cartridgeResolver. '
               + 'In Node, pass `cartridgeResolver: createNodeCartridgeResolver()` '
-              + 'from @revhappy/activation-sdk. See CARTRIDGE_SDK_ROADMAP.md M4.',
+              + 'from machineai-activation. See CARTRIDGE_SDK_ROADMAP.md M4.',
           );
         }
         const resolverSpec: { id: string; version?: string } = { id: spec.cartridge };

@@ -1,13 +1,13 @@
-# @revhappy/activation-capacitor
+# machineai-activation-capacitor
 
-Capacitor (Android) runtime adapter for [`@revhappy/activation-sdk`](../..).
+Capacitor (Android) runtime adapter for [`machineai-activation`](../..).
 
 Bridges the native LiteRT-LM Capacitor plugin to the activation runtime contract, so a Capacitor app can activate a local `.litertlm` model and run on-device inference through the same `createMachine` / `generateText` API as every other runtime — instead of hand-writing ~570 LOC of plugin + capability-resolution glue.
 
 ## Install
 
 ```bash
-npm install @revhappy/activation-capacitor @revhappy/activation-sdk
+npm install machineai-activation-capacitor machineai-activation
 ```
 
 This package ships the **JavaScript bridge only**. The matching native Kotlin plugin (the actual LiteRT-LM execution) has to live in the host Android app — it can't be packaged as an npm dependency. See `ACTIVATION_SDK_INTEGRATION_CHECKPOINT.md` in the Ingredient Analyzer reference app for the host-app Gradle/Kotlin surface.
@@ -21,7 +21,7 @@ This package ships the **JavaScript bridge only**. The matching native Kotlin pl
 For apps that resolve the runtime lazily from a global (the activation SDK's default lookup):
 
 ```ts
-import { registerCapacitorMachineActivationRuntime } from '@revhappy/activation-capacitor';
+import { registerCapacitorMachineActivationRuntime } from 'machineai-activation-capacitor';
 
 // In your app entry file, once:
 registerCapacitorMachineActivationRuntime();
@@ -30,12 +30,12 @@ registerCapacitorMachineActivationRuntime();
 ### Option B — pass the runtime explicitly to `createMachine`
 
 ```ts
-import { createMachine, generateText } from '@revhappy/activation-sdk';
+import { createMachine, generateText } from 'machineai-activation';
 import {
   createCapacitorMachineActivationRuntime,
   isMachineActivationPluginAvailable,
   pickMachineActivationModel,
-} from '@revhappy/activation-capacitor';
+} from 'machineai-activation-capacitor';
 
 if (!isMachineActivationPluginAvailable()) {
   throw new Error('Local mode requires an Android build with the native plugin.');

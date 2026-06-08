@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { CatalogEntry } from '@revhappy/activation-sdk';
+import type { CatalogEntry } from 'machineai-activation';
 
 export interface UseCartridgeFilterOptions {
   initialQuery?: string;

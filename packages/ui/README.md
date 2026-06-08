@@ -1,13 +1,13 @@
-# @revhappy/ui
+# machineai-activation-ui
 
-Headless React / React Native UI kit for [`@revhappy/activation-sdk`](../..).
+Headless React / React Native UI kit for [`machineai-activation`](../..).
 
 Drop-in components for model picker, cartridge card, activation status, inference indicator, and model-import flows — so apps don't rebuild basic local-model UX from scratch.
 
 ## Install
 
 ```bash
-npm install @revhappy/ui @revhappy/activation-sdk react
+npm install machineai-activation-ui machineai-activation react
 # for React Native apps:
 npm install react-native
 ```
@@ -24,8 +24,8 @@ import {
   useInference,
   useActivationSnapshot,
   useCartridgeFilter,
-} from '@revhappy/ui';
-import { createMachine } from '@revhappy/activation-sdk';
+} from 'machineai-activation-ui';
+import { createMachine } from 'machineai-activation';
 
 const machine = createMachine({ runtimes: [myRuntime] });
 
@@ -51,13 +51,13 @@ function ChatScreen() {
 ### Web components
 
 ```tsx
-import { ModelPicker, CartridgeCard, InferenceIndicator } from '@revhappy/ui/web';
+import { ModelPicker, CartridgeCard, InferenceIndicator } from 'machineai-activation-ui/web';
 ```
 
 ### React Native components
 
 ```tsx
-import { ModelPicker, CartridgeCard, InferenceIndicator } from '@revhappy/ui/native';
+import { ModelPicker, CartridgeCard, InferenceIndicator } from 'machineai-activation-ui/native';
 ```
 
 ## Design principles

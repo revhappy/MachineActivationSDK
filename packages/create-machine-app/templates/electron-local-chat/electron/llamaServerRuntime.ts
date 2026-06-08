@@ -29,7 +29,7 @@ import {
   type ActivationRuntime,
   type ActivationSession,
   type ActivationSessionCreateInput,
-} from '@revhappy/activation-sdk';
+} from 'machineai-activation';
 
 const BACKEND_ID = 'llama-server';
 const BACKEND_NAME = 'llama.cpp llama-server (subprocess)';

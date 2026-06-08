@@ -48,7 +48,7 @@ export type {
 
 // Cartridge format (M2 + M3). See CARTRIDGE_SDK_ROADMAP.md.
 // Node-only helpers (createNode*, packCartridge, unpackCartridge) live in
-// `@revhappy/activation-sdk/node` so this barrel is safe to import from
+// `machineai-activation/node` so this barrel is safe to import from
 // Vite/Webpack/RN/Capacitor without pulling node:fs into the bundle.
 export {
   CARTRIDGE_SCHEMA_VERSION,
@@ -87,7 +87,7 @@ export type {
 
 // Catalog (M4). See CARTRIDGE_SDK_ROADMAP.md.
 // Node-only helpers (createNodeCartridgeCache, createNodeCartridgeResolver,
-// downloadAndUnpackCartridge) live in `@revhappy/activation-sdk/node`.
+// downloadAndUnpackCartridge) live in `machineai-activation/node`.
 export {
   CATALOG_SCHEMA_VERSION,
   CartridgeDownloadError,

@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { streamText, type StreamTextResult } from '@revhappy/activation-sdk';
-import { useMachineModel } from '@revhappy/ui';
+import { streamText, type StreamTextResult } from 'machineai-activation';
+import { useMachineModel } from 'machineai-activation-ui';
 
 interface Props {
   modelFilePath: string;

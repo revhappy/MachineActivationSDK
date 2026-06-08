@@ -9,8 +9,8 @@ handles three model file formats with three different inference backends:
 | `.task` | `@mediapipe/tasks-genai` | renderer (WebAssembly) | no (prompt fallback) |
 | `.litertlm` | (recognized, not yet usable) | — | — |
 
-Powered by [`@revhappy/activation-sdk`](https://www.npmjs.com/package/@revhappy/activation-sdk)
-+ [`@revhappy/ui`](https://www.npmjs.com/package/@revhappy/ui).
+Powered by [`machineai-activation`](https://www.npmjs.com/package/machineai-activation)
++ [`machineai-activation-ui`](https://www.npmjs.com/package/machineai-activation-ui).
 
 ## Why this template doesn't use `node-llama-cpp`
 
@@ -139,7 +139,7 @@ who pick one get a clear explanatory notice instead of a confusing
 
 - Add a runtime for a remote OpenAI-compatible endpoint (e.g. for
   fallback to a hosted model when no local one is available).
-- Add a `<ModelPicker>` from `@revhappy/ui` for browsing the cartridge
+- Add a `<ModelPicker>` from `machineai-activation-ui` for browsing the cartridge
   catalog inline (in addition to the OS file picker).
 - Bundle a default GGUF on first launch so the user doesn't have to find
   one — see the cartridge SDK's `machine pull` flow.

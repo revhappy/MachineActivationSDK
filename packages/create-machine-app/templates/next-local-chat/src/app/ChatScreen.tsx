@@ -5,7 +5,7 @@ import {
   InferenceIndicator,
   useInference,
   useMachineModel,
-} from '@revhappy/ui/web';
+} from 'machineai-activation-ui/web';
 
 const CARTRIDGE_ID = 'dev.machine.gemma-3n-e4b-it';
 

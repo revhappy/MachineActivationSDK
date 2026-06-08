@@ -18,8 +18,8 @@ Sections (omit for full payload):
   sdk           Drop-in SDK API (createMachine, generateText, ...).
   manifest      Cartridge manifest fields.
   catalog       Catalog entry + catalog document fields.
-  ui            @revhappy/ui headless React / React Native UI kit.
-  scaffolder    @revhappy/create-machine-app CLI + available templates.
+  ui            machineai-activation-ui headless React / React Native UI kit.
+  scaffolder    create-machineai-app CLI + available templates.
   pointers      File paths an agent should open for more detail.
 
 Flags:
@@ -376,9 +376,9 @@ const CATALOG_FIELDS: ManifestFieldDescription[] = [
 ];
 
 const UI_PACKAGE: UiPackageDescription = {
-  name: '@revhappy/ui',
+  name: 'machineai-activation-ui',
   version: '0.1.0-alpha.1',
-  exports: ['@revhappy/ui', '@revhappy/ui/web', '@revhappy/ui/native'],
+  exports: ['machineai-activation-ui', 'machineai-activation-ui/web', 'machineai-activation-ui/native'],
   hooks: [
     {
       name: 'MachineProvider',
@@ -436,7 +436,7 @@ const UI_PACKAGE: UiPackageDescription = {
 };
 
 const SCAFFOLDER_PACKAGE: ScaffolderPackageDescription = {
-  name: '@revhappy/create-machine-app',
+  name: 'create-machineai-app',
   version: '0.1.0-alpha.1',
   bin: 'create-machine-app',
   usage: 'create-machine-app [app-name] [--template <id>] [--pm <npm|pnpm|yarn>] [--yes] [--force]',
@@ -450,25 +450,25 @@ const SCAFFOLDER_PACKAGE: ScaffolderPackageDescription = {
     {
       id: 'expo-local-chat',
       displayName: 'Expo local chat',
-      description: 'Expo RN app with streaming on-device chat via llama.rn + @revhappy/ui/native.',
+      description: 'Expo RN app with streaming on-device chat via llama.rn + machineai-activation-ui/native.',
       target: 'expo',
     },
     {
       id: 'rn-cli-local-chat',
       displayName: 'RN CLI local chat',
-      description: 'Bare React Native (no Expo) with streaming on-device chat via llama.rn + @revhappy/ui/native.',
+      description: 'Bare React Native (no Expo) with streaming on-device chat via llama.rn + machineai-activation-ui/native.',
       target: 'react-native',
     },
     {
       id: 'next-local-chat',
       displayName: 'Next.js local chat',
-      description: 'Next.js 14 (app router) web app with streaming in-browser chat via @mlc-ai/web-llm + @revhappy/ui/web.',
+      description: 'Next.js 14 (app router) web app with streaming in-browser chat via @mlc-ai/web-llm + machineai-activation-ui/web.',
       target: 'next',
     },
     {
       id: 'electron-local-chat',
       displayName: 'Electron local chat',
-      description: 'Electron desktop app with streaming on-device chat via node-llama-cpp (main) + @revhappy/ui/web (renderer).',
+      description: 'Electron desktop app with streaming on-device chat via node-llama-cpp (main) + machineai-activation-ui/web (renderer).',
       target: 'electron',
     },
   ],

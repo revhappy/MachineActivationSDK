@@ -9,7 +9,7 @@ import {
 import type {
   CartridgeManifest,
   CatalogEntry,
-} from '@revhappy/activation-sdk';
+} from 'machineai-activation';
 import { formatBytes } from '../core/formatBytes';
 
 export interface CartridgeCardProps {

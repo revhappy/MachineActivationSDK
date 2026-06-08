@@ -2,7 +2,7 @@ import type {
   FinishReason,
   StreamTextOptions,
   UsageInfo,
-} from '@revhappy/activation-sdk';
+} from 'machineai-activation';
 
 export type InferenceStatus = 'idle' | 'streaming' | 'done' | 'aborted' | 'error';
 

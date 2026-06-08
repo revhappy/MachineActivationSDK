@@ -1,5 +1,5 @@
 /**
- * Install Proof — exercises the four @revhappy/* tarballs as if a real consumer
+ * Install Proof — exercises the four machineai-activation-* tarballs as if a real consumer
  * had `npm install`-ed them from the public registry. We import the public
  * surface of each package and run the drop-in API end-to-end against a minimal
  * inline ActivationRuntime so the run() result is observable.
@@ -23,19 +23,19 @@ import {
   type ActivationSession,
   type ActivationSessionCreateInput,
   type SchemaLike,
-} from '@revhappy/activation-sdk';
+} from 'machineai-activation';
 
-// Type-only import surface from @revhappy/ui to verify the package exports the
+// Type-only import surface from machineai-activation-ui to verify the package exports the
 // public types described in MIGRATION.md / docs/README.md. We do not call any
 // React hooks at runtime here — that requires a React tree.
 import type {
   UseInferenceReturn,
   UseActivationSnapshotReturn,
-} from '@revhappy/ui';
+} from 'machineai-activation-ui';
 
-// Type-only import from @revhappy/activation-capacitor — the runtime is wired
+// Type-only import from machineai-activation-capacitor — the runtime is wired
 // inside a real Capacitor app, but the export shape needs to be reachable here.
-import type {} from '@revhappy/activation-capacitor';
+import type {} from 'machineai-activation-capacitor';
 
 function buildMinimalSession(input: ActivationSessionCreateInput): ActivationSession {
   const snapshot = {

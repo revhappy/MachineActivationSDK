@@ -16,7 +16,7 @@ import {
   type ActivationAccelerationMode,
   type ActivationInputModality,
   type ActivationOutputModality,
-} from '@revhappy/activation-sdk';
+} from 'machineai-activation';
 
 function createMinimalSession(input: ActivationSessionCreateInput): ActivationSession {
   const capabilitySnapshot = {

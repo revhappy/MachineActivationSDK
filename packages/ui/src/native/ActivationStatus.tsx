@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { StyleProp, Text, View, ViewStyle } from 'react-native';
-import type { ActivationCapabilitySnapshot } from '@revhappy/activation-sdk';
+import type { ActivationCapabilitySnapshot } from 'machineai-activation';
 
 export interface ActivationStatusProps {
   snapshot: ActivationCapabilitySnapshot;

@@ -46,4 +46,4 @@ export {
 } from './cartridgeCache';
 
 // Node-only helpers (createNodeCartridgeCache, downloadAndUnpackCartridge,
-// createNodeCartridgeResolver) live in `@revhappy/activation-sdk/node`.
+// createNodeCartridgeResolver) live in `machineai-activation/node`.

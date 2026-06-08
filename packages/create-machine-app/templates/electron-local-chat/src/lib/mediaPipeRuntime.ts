@@ -10,7 +10,7 @@ import {
   type ActivationRuntime,
   type ActivationSession,
   type ActivationSessionCreateInput,
-} from '@revhappy/activation-sdk';
+} from 'machineai-activation';
 
 const BACKEND_ID = 'mediapipe-tasks-genai';
 const BACKEND_NAME = 'MediaPipe LLM Inference (WASM)';

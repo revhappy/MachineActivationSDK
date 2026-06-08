@@ -1,6 +1,6 @@
 # Documentation index
 
-A directed reading order for `@revhappy/activation-sdk`. Each link below is a markdown file at the repo root or inside this directory.
+A directed reading order for `machineai-activation`. Each link below is a markdown file at the repo root or inside this directory.
 
 ## Start here
 
@@ -49,12 +49,12 @@ The two layers are designed to coexist: use the drop-in API for inference call s
 - `src/activation/` — the activation handshake: contract, adapter, manager, custom-app client, planning, capability inference / registry, observed probes, setup flow.
 - `src/framework/` — the top-level factory (`createMachineActivationSdk` / `createMachineFramework`).
 - `src/index.ts` — RN/browser-safe public barrel.
-- `src/node.ts` — node-only sub-export (`@revhappy/activation-sdk/node`) for tooling.
+- `src/node.ts` — node-only sub-export (`machineai-activation/node`) for tooling.
 
 ## Other workspaces in this repo
 
 | Path | Package | Role |
 |---|---|---|
-| `packages/ui/` | `@revhappy/ui` | Headless React + RN UI kit (hooks + 5 components per target). |
-| `packages/create-machine-app/` | `@revhappy/create-machine-app` | Scaffolder with 5 templates (expo, rn-cli, next, electron, node). |
-| `packages/activation-capacitor/` | `@revhappy/activation-capacitor` | Capacitor (Android) runtime adapter bridging LiteRT-LM. |
+| `packages/ui/` | `machineai-activation-ui` | Headless React + RN UI kit (hooks + 5 components per target). |
+| `packages/create-machine-app/` | `create-machineai-app` | Scaffolder with 5 templates (expo, rn-cli, next, electron, node). |
+| `packages/activation-capacitor/` | `machineai-activation-capacitor` | Capacitor (Android) runtime adapter bridging LiteRT-LM. |
