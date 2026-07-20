@@ -76,7 +76,7 @@ The SDK is now standalone in the following sense:
 - it emits generated `dist/` output
 - the host consumes it through a package-style import path
 
-It is not yet a separately published package, but it is no longer structurally owned by any host app toolchain.
+It is published to the public npm registry as `machineai-activation@0.2.0-beta.1` (first published 2026-06-08), and it is no longer structurally owned by any host app toolchain.
 
 ## Adapter Surface Status
 

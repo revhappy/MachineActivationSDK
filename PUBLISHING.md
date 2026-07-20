@@ -59,5 +59,5 @@ Current release behavior:
 ## Current Honest Limitations
 
 - this is release plumbing, not proof of public adoption
-- tag/release strategy is now defined, but not yet exercised publicly
+- `0.2.0-beta.1` was published to npm on 2026-06-08, but **not via this workflow** — no `activation-sdk-v*` tag exists in the repo, so the tag/release path itself is still unexercised. The published version and the git history are therefore not linked by a tag; see `TODO.md`.
 - the built-in catalog is now externalized as data, but it is still maintained by this repo
