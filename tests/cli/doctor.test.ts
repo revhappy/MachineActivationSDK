@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -118,4 +118,56 @@ test('machine doctor --help exits 0', () => {
   const result = runCli(['doctor', '--help']);
   assert.equal(result.exitCode, 0);
   assert.match(result.stdout, /machine doctor/);
+});
+
+test('machine doctor resolves a cartridge id out of the local cache', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'doctor-cache-'));
+  try {
+    // Lay out a cache the way `machine pull` does:
+    //   <cache>/<id>/<version>/{manifest.json,weights/model.gguf}
+    const cartridgeDir = join(dir, 'test.mini', '1.0.0');
+    mkdirSync(join(cartridgeDir, 'weights'), { recursive: true });
+    writeFileSync(
+      join(cartridgeDir, 'weights', 'model.gguf'),
+      buildQwenLikeGguf({ trailingBytes: 2048 }),
+    );
+    writeFileSync(
+      join(cartridgeDir, 'manifest.json'),
+      JSON.stringify({
+        schemaVersion: '1.0.0',
+        id: 'test.mini',
+        name: 'Test Mini',
+        version: '1.0.0',
+        weights: {
+          format: 'gguf',
+          path: 'weights/model.gguf',
+          sizeBytes: 1,
+          sha256: '0'.repeat(64),
+        },
+        capabilities: { inputModalities: ['text'], outputModalities: ['text'] },
+      }),
+    );
+
+    // Typing the full weights path by hand is the friction the cartridge
+    // format exists to remove, so the id has to work.
+    const result = runCli(['doctor', 'test.mini', '--cache', dir, '--json']);
+    assert.equal(result.exitCode, 0);
+    const report = JSON.parse(result.stdout) as { model: { path: string } };
+    assert.match(report.model.path, /weights/);
+    assert.match(report.model.path, /model\.gguf$/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('machine doctor exits 2 on an unknown cartridge id', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'doctor-cache-'));
+  try {
+    const result = runCli(['doctor', 'nope.not.here', '--cache', dir]);
+    assert.equal(result.exitCode, 2);
+    assert.match(result.stderr, /cannot read nope\.not\.here/);
+    assert.match(result.stderr, /machine list/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

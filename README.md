@@ -15,7 +15,22 @@ Both audiences are served: developers **porting** a cloud-first app onto local i
 
 Per-platform status — including what is wired versus what has actually been run on hardware — lives in [PLATFORM_MATRIX.md](./PLATFORM_MATRIX.md). It is deliberately honest about the difference.
 
-## Try it on a model you already have
+## Sixty seconds, from nothing
+
+```bash
+npm i -g machineai-activation
+
+machine pull qwen2.5-0.5b-instruct          # 367 MB, sha256-verified, unpacked
+machine doctor qwen2.5-0.5b-instruct --run  # load it and measure this machine
+```
+
+No account, no API key, no config. `pull` reads
+[the catalog](https://revhappy.github.io/catalog/catalog.json), verifies the
+archive against its published hash, and refuses to write to the cache if the
+bytes don't match. `doctor --run` then loads the model and tells you what your
+hardware actually does with it.
+
+## Or point it at a model you already have
 
 ```bash
 npx machineai-activation doctor ./models/your-model.gguf

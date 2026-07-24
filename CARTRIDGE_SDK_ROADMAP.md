@@ -36,7 +36,7 @@
 
 Session 16 is the argument for doing it: a single real run surfaced two defects (throughput measured across prompt-eval; `spawn` ENOENT escaping uncaught) that 199 passing tests and a full adapter typecheck had not.
 
-**Then, in order:** stand up a real catalog (`TODO.md` §3 — the default `machine pull` URL is still a **404**, so the north-star adoption test fails at step one for every user); `streamText({ tools })` so an agentic loop can stream (`TODO.md` §7, now the largest remaining API gap); housekeeping in §9 (git tag, `Collecta-Local` repoint, `.pack/` cleanup).
+**Then, in order:** grow the catalog past one cartridge (`TODO.md` §3 — the catalog is live and `machine pull` works, but a catalog of one is a demo; a 1–3B instruct model and a different architecture would make `machine search` do real work); `streamText({ tools })` so an agentic loop can stream (`TODO.md` §7, now the largest remaining API gap); housekeeping in §9 (git tag, `Collecta-Local` repoint, `.pack/` cleanup).
 
 M9 (publish + docs) is **partially done and was mis-tracked**: all four packages have been on public npm at `0.2.0-beta.1` since 2026-06-08. What remains of M9 is the git tag (careful — see `TODO.md` §9), the migration guide, and the docs site.
 
@@ -95,7 +95,14 @@ Deferred (do NOT pull into M8):
 
 Make the Machine Activation SDK into a **model-as-cartridge** system a developer can adopt in under an hour.
 
-**Adoption test:** A dev with a working Vercel-AI-SDK cloud app can swap one import, run `machine pull gemma-3n`, and their app runs locally on their phone in under 30 minutes. No native code. No URI handling. No quantization knowledge.
+**Adoption test:** A dev with a working Vercel-AI-SDK cloud app can swap one import, run `machine pull <model>`, and their app runs locally on their phone in under 30 minutes. No native code. No URI handling. No quantization knowledge.
+
+**Status of that test (2026-07-24):** the desktop half now passes for real.
+`machine pull qwen2.5-0.5b-instruct` works from a clean machine with no flags —
+367 MB from <https://revhappy.github.io/catalog/catalog.json>, sha256-verified,
+unpacked — and `machine doctor --run` on the result loads the model and returns
+grammar-constrained JSON. What's unproven is *"on their phone"*: no mobile
+platform has run a model yet (`TODO.md` §2).
 
 This means two things must become true:
 1. **Console side (the app)** — an API shape devs already know. One-line imports. No backend-specific knowledge leaks into app code.
@@ -327,7 +334,7 @@ my-cartridge.mcart (= zip archive)
 **Goal:** `machine pull gemma-3n` downloads a signed cartridge from a public index.
 
 ### Catalog spec
-Static JSON array hosted at `https://machine-ai.github.io/catalog/catalog.json`:
+Static JSON array hosted at `https://revhappy.github.io/catalog/catalog.json` (repo `revhappy/catalog`, live since 2026-07-24):
 ```ts
 {
   schemaVersion: "1.0.0",
@@ -544,7 +551,7 @@ Next session: **M4 — Catalog v1** (catalog schema + fetch + cache + `machine p
 - ✅ `src/catalog/nodeDownloadCartridge.ts` — `downloadAndUnpackCartridge(...)`. Writes to `<tmpDir>/<id>-<version>.mcart.partial` via a write-stream, streams sha256 with `createHash('sha256')` (using `hash.copy().digest('hex')` inside the `StreamingHasher` so the mid-stream digest is available without ending the hash). After verification: `rm` old cartridgeDir, `mkdir` parent, `unpackCartridge` into the real path. Atomic on crash — a failed pull leaves the cache untouched.
 - ✅ `src/catalog/nodeCartridgeResolver.ts` — `createNodeCartridgeResolver({ cache?, catalogUrl?, catalog?, autoPull?, catalogFetch?, downloadFetch?, onProgress? })`. Cache hit → `loadCartridge` directly. Cache miss + `autoPull: false` → throws a message telling the user to `machine pull`. Cache miss + `autoPull: true` → fetch catalog → resolve entry → download → load. Both fetchers are injectable for tests.
 - ✅ `src/catalog/index.ts` — barrel exporting every portable + Node piece.
-- ✅ `src/bin/commands/pull.ts` — `machine pull <id>[@<version>] [--catalog <url>] [--cache <dir>] [--force]`. Fetches catalog, resolves entry, early-returns if cached (unless `--force`), otherwise streams a progress bar with ETA. Default catalog URL: `https://machine-ai.github.io/catalog/catalog.json`.
+- ✅ `src/bin/commands/pull.ts` — `machine pull <id>[@<version>] [--catalog <url>] [--cache <dir>] [--force]`. Fetches catalog, resolves entry, early-returns if cached (unless `--force`), otherwise streams a progress bar with ETA. Default catalog URL: `https://revhappy.github.io/catalog/catalog.json`.
 - ✅ `src/bin/commands/search.ts` — `machine search <query> [--catalog <url>] [--json]`. Case-insensitive substring match across `id`/`name`/`description`/`tags`/`categories`.
 - ✅ `src/bin/commands/list.ts` — `machine list [--cache <dir>] [--json]`. Walks `cache.list()`, reads each manifest + `stat`s the declared weights file for size. Survives malformed manifests (still lists the dir).
 - ✅ `src/bin/machine.ts` — three new entries in `COMMANDS` map + three new lines in `HELP`.
@@ -971,6 +978,14 @@ Running it immediately surfaced two things static analysis had not: throughput w
 Also: `llamaServerRuntime` chains the caller's `abortSignal` into its `fetch` controller; the electron template's `.gitignore` now excludes `vendor/` (a scaffolded app should not commit 200 MB of prebuilts).
 
 Tests: SDK **157 → 199**, UI 14, scaffolder 52 — all green, `check:all` clean.
+
+**Catalog (same session, after the above).** `machine pull qwen2.5-0.5b-instruct` now works from a clean machine with **no flags**: 367.50 MB from <https://revhappy.github.io/catalog/catalog.json> in 2m31s, sha256-verified, unpacked, and `machine doctor --run` on the result reports `verdict: ready` with grammar working. The whole search → pull → list → doctor loop is covered by a local end-to-end harness (6/6) before anything was published, plus a live run against the real URLs.
+
+The old default was never going to work: it pointed at `machine-ai.github.io`, and `machine-ai` is a dormant GitHub **user** account from 2019 that we don't control (`machineai` is taken too). A namespace problem wearing a hosting problem's clothes. New home is `revhappy/catalog` (MIT, Pages), transferable to an org later since GitHub keeps redirects.
+
+**Weights ship as release assets.** A `.mcart` is 367 MB and git caps files at 100 MB, so `catalog.json` lives on Pages and archives are Release assets (2 GB each) — which also keeps the catalog small enough to fetch on every `search`, diff in a PR, and review by hand. `scripts/add-cartridge.js` in the catalog repo reads the manifest out of the archive (zero-dep zip central-directory reader) and computes size + sha256, so entries are never hand-hashed.
+
+Writing the README exposed one ergonomic gap and it was fixed rather than documented around: `machine doctor` now accepts a **cartridge id**, not just a path, so the quickstart is `machine pull <id>` then `machine doctor <id> --run` instead of making anyone type `~/.machine/cartridges/<id>/<version>/weights/model.gguf`.
 
 **Files touched:** new `src/model/{gguf,nodeGguf}.ts`, `src/sdk/abort.ts`, `src/bin/commands/{doctor,doctorRuntime}.ts`; modified `src/sdk/{generateText,streamText,generateObject,zodToJsonSchema}.ts`, `src/activation/activationAdapter.ts`, `src/bin/{machine.ts,commands/describe.ts}`, `package.json`; all three `tests/_harness.ts` + `tests/run.ts`, `tests/cli/{_run,pull}.test.ts`, `tests/sdk/{tool,_mockRuntime}.test.ts`; new `tests/{model/*,cli/doctor.test.ts,sdk/{abort,zodVersions}.test.ts}`; `templates/electron-local-chat/{electron/llamaServerRuntime.ts,.gitignore}`.
 

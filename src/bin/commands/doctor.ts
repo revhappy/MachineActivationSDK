@@ -1,6 +1,9 @@
-import { statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { cpus, freemem, totalmem } from 'node:os';
-import { dirname, resolve as pathResolve } from 'node:path';
+import { dirname, join as pathJoin, resolve as pathResolve } from 'node:path';
+
+import { parseCartridgeManifest } from '../../cartridge';
+import { createNodeCartridgeCache } from '../../catalog/nodeCartridgeCache';
 
 import {
   resolveCapabilityContract,
@@ -35,15 +38,19 @@ import {
 } from './doctorRuntime';
 
 const HELP = `\
-machine doctor <model.gguf> [flags]
+machine doctor <model.gguf | cartridge-id> [flags]
 
 Answer the questions a local model actually raises: can this run here, will it
 fit, how fast is it, what's degraded, and what acceleration is live.
+
+Accepts a path to a .gguf, or the id of a cartridge you've already pulled —
+\`machine doctor qwen2.5-0.5b-instruct\` resolves it out of the local cache.
 
 Works offline against a file on disk — no catalog, no account, no network.
 
 Flags:
   --run                 Actually load the model and measure it (needs llama-server).
+  --cache <dir>         Cache root when resolving a cartridge id (default: ~/.machine/cartridges).
   --server <path>       Path to llama-server[.exe]. Defaults to $MACHINE_LLAMA_SERVER
                         or a vendored build under ./vendor/llama-cpp/.
   --gpu-layers <n>      Layers to offload when running (default: 0 = CPU).
@@ -104,7 +111,17 @@ export async function runDoctor(argv: string[]): Promise<number> {
   }
 
   const json = getBoolFlag(args, 'json', false);
-  const modelPath = pathResolve(target);
+
+  const modelPath = await resolveModelPath(target, getStringFlag(args, 'cache'));
+  if (!modelPath) {
+    errorln(red(`doctor: cannot read ${target}`));
+    errorln(
+      dim(
+        '  Pass a path to a .gguf, or the id of a cartridge you have pulled (see `machine list`).',
+      ),
+    );
+    return 2;
+  }
 
   let fileSizeBytes: number;
   try {
@@ -178,6 +195,46 @@ export async function runDoctor(argv: string[]): Promise<number> {
   if (report.verdict === 'not-recommended') return 1;
   if (liveRun && !liveRun.ok) return 1;
   return 0;
+}
+
+/**
+ * Accept either a filesystem path or the id of an already-pulled cartridge.
+ *
+ * A path always wins if it exists, so a directory named after a cartridge
+ * can't shadow a real file. Otherwise we look the id up in the local cache and
+ * resolve the weights path from its manifest — typing
+ * `~/.machine/cartridges/<id>/<version>/weights/model.gguf` by hand is exactly
+ * the kind of friction the cartridge format exists to remove.
+ */
+async function resolveModelPath(
+  target: string,
+  cacheDir: string | undefined,
+): Promise<string | undefined> {
+  const asPath = pathResolve(target);
+  if (existsSync(asPath)) return asPath;
+
+  // Only try the cache for things that look like an id, not a stray path.
+  if (target.includes('/') || target.includes('\\')) return undefined;
+
+  try {
+    const cache = createNodeCartridgeCache(cacheDir ? { rootDir: cacheDir } : {});
+    const entries = await cache.list();
+    const matches = entries.filter((entry) => entry.id === target);
+    if (matches.length === 0) return undefined;
+
+    // Latest version wins when several are cached.
+    const chosen = matches.sort((a, b) => a.version.localeCompare(b.version)).pop()!;
+    const manifestRaw = JSON.parse(
+      readFileSync(pathJoin(chosen.cartridgeDir, 'manifest.json'), 'utf8'),
+    ) as unknown;
+    const parsed = parseCartridgeManifest(manifestRaw);
+    if (!parsed.valid) return undefined;
+
+    const weightsPath = pathJoin(chosen.cartridgeDir, parsed.manifest.weights.path);
+    return existsSync(weightsPath) ? weightsPath : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 interface DeviceInfo {

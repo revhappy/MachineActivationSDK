@@ -10,12 +10,12 @@ Search a catalog for cartridges matching a substring across id, name,
 description, tags, and categories. Case-insensitive.
 
 Flags:
-  --catalog <url>   Catalog JSON URL (default: machine-ai.github.io).
+  --catalog <url>   Catalog JSON URL (default: revhappy.github.io/catalog).
   --json            Emit matching entries as JSON instead of a table.
   --help            Show this message.
 `;
 
-const DEFAULT_CATALOG_URL = 'https://machine-ai.github.io/catalog/catalog.json';
+const DEFAULT_CATALOG_URL = 'https://revhappy.github.io/catalog/catalog.json';
 
 export async function runSearch(argv: string[]): Promise<number> {
   if (argv.includes('--help') || argv.includes('-h')) {

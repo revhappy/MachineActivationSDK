@@ -123,20 +123,44 @@ exception.
 
 ---
 
-## 3. 🔴 Stand up a real catalog
+## 3. ✅ Done 2026-07-24 — the catalog is live and `machine pull` works
 
-`machine pull` and `machine search` default to
-`https://machine-ai.github.io/catalog/catalog.json` (`src/bin/commands/pull.ts:23`,
-`search.ts:18`). **That URL is a 404 — the org GitHub Pages site does not exist.**
-The only catalog in the repo is `catalog/cartridge-catalog.sample.json`, pointing at
-`example.invalid` with an all-zero sha256.
+`machine pull qwen2.5-0.5b-instruct` now works **with no flags, from a clean
+machine**. Verified end to end on Windows: 367.50 MB pulled from the public
+internet in 2m31s, sha256 verified, unpacked, and `machine doctor --run` on the
+result reported `verdict: ready` with grammar-constrained JSON working.
 
-The north-star adoption test in `CARTRIDGE_SDK_ROADMAP.md` is literally
-`machine pull gemma-3n`. It fails at step one for every user.
+- **Catalog:** <https://revhappy.github.io/catalog/catalog.json> — repo
+  `revhappy/catalog`, served by GitHub Pages, MIT.
+- **First cartridge:** `qwen2.5-0.5b-instruct` v1.0.0 (Qwen2.5-0.5B-Instruct
+  Q4_K_M, Apache-2.0), packed with `machine pack`.
+- **Default URL repointed** in `src/bin/commands/{pull,search}.ts`.
 
-This is the **package** verb — the differentiated half of the product — and the fix
-is mostly hosting/content, not engineering: host a catalog, publish one real
-`.mcart` for a small model, point the default at it.
+**The old default was never going to work.** It pointed at
+`machine-ai.github.io`, and `machine-ai` is a dormant GitHub *user* account from
+2019 that we don't control (`machineai` is taken too). This was a namespace
+problem wearing a hosting problem's clothes.
+
+**Weights ship as release assets, not repo files.** A `.mcart` is 367 MB and
+git's hard per-file cap is 100 MB, so `catalog.json` lives on Pages and the
+archives are GitHub Release assets (2 GB each). That keeps the catalog small
+enough to fetch on every `search`, diff in a PR, and review by hand, while the
+bytes it points at stay content-addressed.
+
+`scripts/add-cartridge.js` in the catalog repo reads the manifest straight out of
+an archive and computes size + sha256, so entries are never hand-hashed.
+
+### Still open on the catalog
+
+- **Only one cartridge.** A catalog of one is a demo. Next: a 1–3B instruct model
+  and something with a different architecture, so `machine search` has to
+  actually discriminate.
+- **Bandwidth has no plan.** GitHub Releases is fine at this volume and is not a
+  distribution strategy. See the "Cartridge distribution economics" open question
+  in the roadmap.
+- `catalog/cartridge-catalog.sample.json` in *this* repo is still the
+  `example.invalid` fixture. That's intentional — it's a test fixture, not the
+  live catalog — but don't mistake it for one.
 
 ## 4. ✅ Done — `machine doctor <model.gguf>` surfaces the **test** verb
 
