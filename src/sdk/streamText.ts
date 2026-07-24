@@ -9,6 +9,7 @@ import type {
   StreamTextResult,
   UsageInfo,
 } from './types';
+import { linkSessionAbort } from './abort';
 
 const MAX_QUEUED_CHUNKS = 1024;
 
@@ -37,6 +38,7 @@ export function streamText(options: StreamTextOptions): StreamTextResult {
       topK: options.topK,
       maxTokens: options.maxTokens,
       stopSequences: options.stopSequences,
+      abortSignal: options.abortSignal,
       onChunk: (chunk: ActivationCompletionChunk) => {
         if (chunk.textDelta) {
           if (queue.length >= MAX_QUEUED_CHUNKS) {
@@ -49,24 +51,21 @@ export function streamText(options: StreamTextOptions): StreamTextResult {
       },
     };
 
-    if (options.abortSignal) {
-      const abortHandler = (): void => {
-        void session.abort();
-      };
-      if (options.abortSignal.aborted) {
-        abortHandler();
-      } else {
-        options.abortSignal.addEventListener('abort', abortHandler, { once: true });
-      }
-    }
+    // `completionOptions.abortSignal` covers adapters that cancel natively;
+    // this covers the rest. See src/sdk/abort.ts.
+    const unlinkAbort = linkSessionAbort(options.abortSignal, session);
 
-    if (options.messages && options.messages.length > 0) {
-      return session.completeChat(options.messages, completionOptions);
+    try {
+      if (options.messages && options.messages.length > 0) {
+        return await session.completeChat(options.messages, completionOptions);
+      }
+      if (options.prompt) {
+        return await session.complete(options.prompt, completionOptions);
+      }
+      throw new Error('streamText requires either `prompt` or `messages`.');
+    } finally {
+      unlinkAbort();
     }
-    if (options.prompt) {
-      return session.complete(options.prompt, completionOptions);
-    }
-    throw new Error('streamText requires either `prompt` or `messages`.');
   })();
 
   finalCompletion.then(

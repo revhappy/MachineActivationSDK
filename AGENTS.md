@@ -45,7 +45,16 @@ npm run build         # emits dist/ — publishable artefacts
 npm run check         # typecheck + test + build, in order
 ```
 
-**Pre-existing flake:** `tests/cli/pull.test` has localhost-server tests that can fail with `fetch failed` under port contention. If `check` fails *only* with those 5 tests + nothing else changed, the flake is unrelated — re-run once to confirm.
+Tests run **sequentially**, in the order `tests/run.ts` imports them, each under a
+timeout (`MACHINE_TEST_TIMEOUT_MS`, default 60 s). Anything slower than 5 s is
+annotated with its duration. The whole suite takes ~37 s.
+
+**There is no longer a "pre-existing flake."** The long-standing
+`tests/cli/pull.test` localhost failure was a deadlock, not port contention: one
+test used the blocking `runCli` (`spawnSync`) while needing the in-process catalog
+server to answer, so the event loop was held for the child's whole life and the
+test sat until undici's 300 s timeout. Fixed 2026-07-24. **If you add a CLI test
+that talks to `startCatalogServer`, use `runCliAsync` — never `runCli`.**
 
 ## Common tasks, in recipe form
 
@@ -121,7 +130,7 @@ The scaffolder is a separate workspace at `packages/create-machine-app/`. Root `
 
 ## Before you ship
 
-- [ ] `npm run check` green (or flakes clearly in the baseline-flake set).
+- [ ] `npm run check` green. There is no accepted flake set — a failure is a real failure.
 - [ ] Updated `CARTRIDGE_SDK_ROADMAP.md`: `Session log` gets a new entry, `Current status` table reflects reality, `RESUME HERE` still points at the right next thing.
 - [ ] Updated `src/bin/commands/describe.ts` if the change altered any surface that lives in the payload.
 - [ ] No new `node:*` imports outside `node*`-prefixed files.

@@ -1,16 +1,62 @@
 # Machine Activation SDK
 
-The Machine Activation SDK
-
-Purpose is to let developers plug a local model into an app like a cartridge and get a simple activation path first, with diagnostics available when they want them.
+**The adapter layer for local models.** Plug a GGUF into an app like a cartridge — on Windows, macOS, Linux, Android, or iOS — and get a straight activation path, with diagnostics when you want them.
 
 The public package name is:
 
 - `machineai-activation`
 
-## Fast Start
+Two things this is for:
 
-If you're coming from the Vercel AI SDK, OpenAI SDK, or Anthropic SDK, the drop-in API is the best starting point:
+1. **Test a model against your app.** Point at a model file and ask: does it run *here*? Does it fit in memory? How fast? What's degraded? What acceleration is actually live? That's the **activation contract**, and it's the part of this SDK that has no equivalent elsewhere.
+2. **Package a model into your app.** The `.mcart` cartridge format, the `machine` CLI, and the catalog exist so shipping a multi-GB model with your product is a solved problem rather than a bespoke one each time.
+
+Both audiences are served: developers **porting** a cloud-first app onto local inference, and developers **building** local-only apps with this as the backbone.
+
+Per-platform status — including what is wired versus what has actually been run on hardware — lives in [PLATFORM_MATRIX.md](./PLATFORM_MATRIX.md). It is deliberately honest about the difference.
+
+## Try it on a model you already have
+
+```bash
+npx machineai-activation doctor ./models/your-model.gguf
+```
+
+No account, no catalog, no network. It reads the GGUF header directly and tells you the architecture, quantization, parameter count and context window; measures the device it's running on; and gives a memory-fit verdict from the activation contract:
+
+```
+Qwen2.5 0.5B Instruct
+  size:           379.38 MB
+  architecture:   qwen2
+  quantization:   Q4_K_M
+  parameters:     494M
+  context:        32,768 tokens
+  chat template:  present
+
+Fit
+  est. footprint: 1,281 MB
+  recommended:    1,538 MB free
+  assessment:     supported
+
+Verdict: ready
+```
+
+Add `--run` and it loads the model through `llama-server` and reports what actually happened — load time, time to first token, decode throughput, live acceleration, and whether grammar-constrained JSON works:
+
+```
+Live run
+  load time:      3.7s
+  first token:    1.05s
+  throughput:     12.3 tok/s (19 tokens, decode only)
+  acceleration:   cpu
+  grammar JSON:   works
+  structured: {"language":"French","confidence":0.95}
+```
+
+`--json` emits the whole report for scripting. This is the **test** verb, and it's the half of the product a cloud SDK has no analogue for.
+
+## Coming from a cloud SDK? Start here
+
+If you're arriving from the Vercel AI SDK, OpenAI SDK, or Anthropic SDK, there's a drop-in API shaped like the one you already use, so porting is a one-import change:
 
 ```ts
 import { createMachine, generateText, streamText, generateObject, tool } from 'machineai-activation';
@@ -44,9 +90,13 @@ const result = await generateText({
 });
 ```
 
-See [CARTRIDGE_SDK_ROADMAP.md](./CARTRIDGE_SDK_ROADMAP.md) for where this SDK is going: `.mcart` cartridge format, `machine` CLI, `machine pull`, scaffolders, headless UI kit.
+That surface is the **porting on-ramp**, not the point of the SDK. It's deliberately familiar so migration costs nothing — but a cloud API shape has no vocabulary for what actually matters locally: model load time, RAM fit, thermal throttling, swapping models, quantization tradeoffs. There's no `model.load()` in a cloud SDK because loading is free and instant; on-device it's seconds and gigabytes.
 
-If you need the underlying activation handshake (capability resolution, diagnostics, onboarding plans, etc.), those APIs are still the recommended way in:
+The activation handshake below *is* that vocabulary, and it's what you'll want once the port works.
+
+See [CARTRIDGE_SDK_ROADMAP.md](./CARTRIDGE_SDK_ROADMAP.md) for where this is going: `.mcart` cartridge format, `machine` CLI, `machine pull`, scaffolders, headless UI kit.
+
+For the activation handshake itself (capability resolution, diagnostics, onboarding plans):
 
 1. [GETTING_STARTED.md](./GETTING_STARTED.md)
 2. [BACKEND_CAPABILITIES.md](./BACKEND_CAPABILITIES.md)
@@ -469,6 +519,7 @@ Avoid using speculative names like separate product surfaces unless they actuall
 
 ## Reading Order
 
+0. [PLATFORM_MATRIX.md](./PLATFORM_MATRIX.md) — what runs where, and what's verified vs merely wired
 1. [GETTING_STARTED.md](./GETTING_STARTED.md)
 2. [BACKEND_CAPABILITIES.md](./BACKEND_CAPABILITIES.md)
 3. [PACKAGE_CONSUMPTION.md](./PACKAGE_CONSUMPTION.md)

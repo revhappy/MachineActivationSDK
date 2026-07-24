@@ -1,14 +1,36 @@
 import { CreateMLCEngine, type MLCEngine, type ChatCompletionMessageParam } from '@mlc-ai/web-llm';
-import type {
-  ActivationRuntime,
-  ActivationSession,
-  ActivationSessionCreateInput,
+import {
+  ACTIVATION_CONTRACT_SCHEMA_VERSION,
+  type ActivationChatMessage,
+  type ActivationCompletionOptions,
+  type ActivationCompletionResult,
+  type ActivationRuntime,
+  type ActivationSession,
+  type ActivationSessionCreateInput,
 } from 'machineai-activation';
 
 const BACKEND_ID = 'web-llm';
 const BACKEND_NAME = '@mlc-ai/web-llm';
 
 const DEFAULT_WEB_LLM_MODEL = 'Llama-3.2-1B-Instruct-q4f32_1-MLC';
+
+// Flatten SDK message parts to text and fold the `tool` role into a user turn —
+// WebLLM's OpenAI-shaped API accepts a `tool` role only alongside tool_call ids,
+// which this adapter does not produce.
+function toWebLlmMessage(message: ActivationChatMessage): ChatCompletionMessageParam {
+  const text =
+    typeof message.content === 'string'
+      ? message.content
+      : message.content
+          .map((part) => (part.type === 'text' ? part.text : ''))
+          .filter(Boolean)
+          .join('\n');
+
+  if (message.role === 'tool') {
+    return { role: 'user', content: `Tool result: ${text}` } as ChatCompletionMessageParam;
+  }
+  return { role: message.role, content: text } as ChatCompletionMessageParam;
+}
 
 async function createWebLlmSession(
   input: ActivationSessionCreateInput,
@@ -28,7 +50,7 @@ async function createWebLlmSession(
   };
 
   const capabilitySnapshot = {
-    schemaVersion: 1,
+    schemaVersion: ACTIVATION_CONTRACT_SCHEMA_VERSION,
     appRequirements: input.appRequirements ?? {},
     model: {
       modelId: input.modelId,
@@ -65,7 +87,7 @@ async function createWebLlmSession(
       notes: ['Browser with WebGPU support required'],
     },
     resolvedContract: {
-      schemaVersion: 1,
+      schemaVersion: ACTIVATION_CONTRACT_SCHEMA_VERSION,
       compatible: true,
       degraded: false,
       compatibility: 'compatible' as const,
@@ -82,29 +104,54 @@ async function createWebLlmSession(
   };
 
   const runChat = async (
-    messages: ChatCompletionMessageParam[],
-    maxTokens: number | undefined,
-    stream: { onToken?: (e: { delta: string }) => void } | undefined,
-    signal: AbortSignal | undefined,
-  ) => {
+    history: ChatCompletionMessageParam[],
+    options: ActivationCompletionOptions | undefined,
+  ): Promise<ActivationCompletionResult> => {
+    const opts = options ?? {};
+
+    // Only prepend systemPrompt when the caller didn't already supply a system
+    // turn — generateText's tool loop bakes its system prompt into messages[0]
+    // and ALSO passes `system` through, which would otherwise send it twice.
+    const messages: ChatCompletionMessageParam[] =
+      opts.systemPrompt && !history.some((m) => m.role === 'system')
+        ? [
+            { role: 'system', content: opts.systemPrompt } as ChatCompletionMessageParam,
+            ...history,
+          ]
+        : history;
+
     let text = '';
     let tokensGenerated = 0;
     const started = Date.now();
 
     const chunks = await engine.chat.completions.create({
       messages,
-      max_tokens: maxTokens ?? 512,
+      max_tokens: opts.maxTokens ?? 512,
+      temperature: opts.temperature,
+      top_p: opts.topP,
+      stop: opts.stopSequences,
       stream: true,
     });
 
     for await (const chunk of chunks) {
-      if (signal?.aborted) break;
       const delta = chunk.choices[0]?.delta?.content ?? '';
-      if (delta) {
-        text += delta;
-        tokensGenerated += 1;
-        stream?.onToken?.({ delta });
-      }
+      if (!delta) continue;
+      text += delta;
+      tokensGenerated += 1;
+      const seconds = (Date.now() - started) / 1000;
+      const tokensPerSecond = seconds > 0 ? tokensGenerated / seconds : 0;
+      opts.onToken?.(delta);
+      // streamText consumes onChunk exclusively — emitting only onToken makes
+      // streaming silently collapse into a single end-of-generation delivery.
+      opts.onChunk?.({
+        rawToken: delta,
+        text,
+        textDelta: delta,
+        reasoningText: '',
+        reasoningDelta: '',
+        tokensGenerated,
+        tokensPerSecond,
+      });
     }
 
     const seconds = (Date.now() - started) / 1000;
@@ -122,20 +169,11 @@ async function createWebLlmSession(
     resolvedContract: capabilitySnapshot.resolvedContract,
     capabilitySnapshot,
 
-    complete: async ({ prompt, system, maxTokens, stream, signal }) => {
-      const messages: ChatCompletionMessageParam[] = [];
-      if (system) messages.push({ role: 'system', content: system });
-      messages.push({ role: 'user', content: prompt });
-      return runChat(messages, maxTokens, stream, signal);
-    },
+    complete: (prompt, options) =>
+      runChat([{ role: 'user', content: prompt }], options),
 
-    completeChat: async ({ messages, maxTokens, stream, signal }) => {
-      const mapped = messages.map((m) => ({
-        role: m.role as ChatCompletionMessageParam['role'],
-        content: m.content,
-      })) as ChatCompletionMessageParam[];
-      return runChat(mapped, maxTokens, stream, signal);
-    },
+    completeChat: (messages, options) =>
+      runChat(messages.map(toWebLlmMessage), options),
 
     contextState: async () => ({
       strategy: 'fresh',

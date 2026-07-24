@@ -10,7 +10,7 @@ import type { Catalog } from '../../src/catalog';
 import { createCartridgeFixture } from '../cartridge/_fixtures';
 import { test } from '../_harness';
 import { startCatalogServer } from './_catalogServer';
-import { runCli, runCliAsync, withTempDirAsync } from './_run';
+import { runCliAsync, withTempDirAsync } from './_run';
 
 async function prepareFixtureArchive(workDir: string): Promise<{
   archivePath: string;
@@ -172,7 +172,14 @@ test('machine pull exits 1 when the catalog does not contain the id', async () =
     const server = await startCatalogServer({ catalog, archives: {} });
     try {
       const cacheDir = join(workDir, 'cache');
-      const result = runCli([
+      // MUST be runCliAsync: this test needs the in-process catalog server to
+      // answer the child's fetch. With the blocking `runCli`, spawnSync holds
+      // the parent event loop for the child's entire lifetime, the server can
+      // never respond, and the child sits until undici's 300s headers timeout
+      // — then exits 1 for the wrong reason, which this test happily accepted.
+      // That single line was the whole "CLI pull/search localhost flake" and
+      // most of the suite's ~4 minute runtime.
+      const result = await runCliAsync([
         'pull',
         'com.example.missing',
         '--catalog',
@@ -182,6 +189,9 @@ test('machine pull exits 1 when the catalog does not contain the id', async () =
       ]);
       assert.equal(result.exitCode, 1);
       assert.match(result.stderr, /pull:/);
+      // Assert it failed because the entry is missing, not because the
+      // catalog fetch timed out.
+      assert.match(result.stderr, /com\.example\.missing/);
     } finally {
       await server.close();
     }

@@ -12,6 +12,14 @@
 
 Each item: **what → evidence → impact → suggested fix → priority.**
 
+> **Status as of 2026-07-24 (session 16).** Items **2, 3, 4, 5 and 6 are fixed**
+> in `src/`; see `TODO.md` §5–§7 and the roadmap session log for what landed.
+> Still open: **1** (`streamText` has no tools — now the largest remaining API
+> gap), **7** (`onToken`/`onChunk` ambiguity — behavior is settled, the docs
+> aren't), **8** (unknown tool name ends the loop silently), **9**
+> (enhancement). Individual sections below are left as originally written so the
+> field evidence stays intact.
+
 ---
 
 ## 1. `streamText` has no tool support

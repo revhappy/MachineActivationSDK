@@ -34,6 +34,17 @@ export interface ActivationCompletionOptions {
   enableThinking?: boolean;
   responseFormat?: ActivationResponseFormat;
   grammar?: string;
+  /**
+   * Cancellation signal for this completion.
+   *
+   * Adapters that can cancel natively should honor it — pass it straight to
+   * `fetch`, or unsubscribe from the backend's token callback. Adapters that
+   * can't may ignore it: the SDK also calls `session.abort()` when the signal
+   * fires, which every adapter implements. Honoring the signal is strictly
+   * better, because it scopes cancellation to one in-flight completion instead
+   * of the whole session.
+   */
+  abortSignal?: AbortSignal;
   onToken?: (token: string) => void;
   onChunk?: (chunk: ActivationCompletionChunk) => void;
 }

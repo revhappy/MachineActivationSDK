@@ -12,6 +12,9 @@ import './sdk/generateObject.test';
 import './sdk/tool.test';
 import './sdk/jsonSchemaToGbnf.test';
 import './sdk/zodToJsonSchema.test';
+import './sdk/zodVersions.test';
+import './sdk/abort.test';
+import './model/gguf.test';
 import './cartridge/manifestSchema.test';
 import './cartridge/loadCartridge.test';
 import './cartridge/validateCartridge.test';
@@ -31,6 +34,15 @@ import './cli/pull.test';
 import './cli/search.test';
 import './cli/list.test';
 import './cli/describe.test';
+import './cli/doctor.test';
 import { finish } from './_harness';
 
-void finish();
+void finish().then(
+  () => {
+    process.exitCode = 0;
+  },
+  (error: unknown) => {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  },
+);

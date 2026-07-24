@@ -59,6 +59,38 @@ test('next-local-chat: webLlmRuntime imports @mlc-ai/web-llm', () => {
   });
 });
 
+test('next-local-chat: webLlmRuntime matches the ActivationSession contract', () => {
+  withTempDir((tmp) => {
+    runCli(['rt', '-t', 'next-local-chat', '-y'], { cwd: tmp });
+    const source = readFileSync(
+      join(tmp, 'rt', 'src', 'lib', 'webLlmRuntime.ts'),
+      'utf8',
+    );
+
+    // Same defect class the expo/rn-cli adapters carried: destructuring the
+    // FIRST argument as an object, while the contract passes
+    // (prompt, options) / (messages, options).
+    assert(
+      !source.includes('async ({ prompt,'),
+      'complete does not destructure its first argument',
+    );
+    assert(
+      !source.includes('async ({ messages,'),
+      'completeChat does not destructure its first argument',
+    );
+    assert(source.includes('complete: (prompt, options)'), 'complete takes (prompt, options)');
+    assert(
+      source.includes('completeChat: (messages, options)'),
+      'completeChat takes (messages, options)',
+    );
+    assert(source.includes('opts.onChunk?.('), 'emits onChunk so streamText streams');
+    assert(
+      source.includes('ACTIVATION_CONTRACT_SCHEMA_VERSION'),
+      'uses the contract schema version constant, not a hardcoded number',
+    );
+  });
+});
+
 test('next-local-chat: page.tsx wires MachineProvider + webLlmRuntime', () => {
   withTempDir((tmp) => {
     runCli(['b', '-t', 'next-local-chat', '-y'], { cwd: tmp });

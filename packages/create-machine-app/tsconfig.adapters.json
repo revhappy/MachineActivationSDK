@@ -1,0 +1,44 @@
+{
+  // Typechecks the runtime adapters that live inside the scaffolder templates.
+  //
+  // Templates as a whole are deliberately NOT typechecked (they reference deps
+  // that only exist after scaffolding). But the runtime adapters are different:
+  // they implement the ActivationRuntime / ActivationSession contract, and a
+  // drift there is invisible until someone scaffolds an app and runs it.
+  //
+  // That is not hypothetical. Three shipped adapters (expo, rn-cli, next) had
+  // `complete`/`completeChat` destructuring their FIRST argument as an object
+  // while the contract passes (prompt, options) / (messages, options). Every
+  // call from generateText/streamText was passing a string where an object was
+  // expected. Nothing caught it because nothing typechecked these files.
+  //
+  // External deps are satisfied by the hand-written stubs in ./types.
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2020", "DOM", "DOM.AsyncIterable"],
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "machineai-activation": ["../../src/index.ts"],
+      "machineai-activation/*": ["../../src/*"]
+    }
+  },
+  "include": [
+    "types/**/*.d.ts",
+    "templates/electron-local-chat/electron/preload-types.d.ts",
+    "templates/rn-cli-local-chat/src/llamaRuntime.ts",
+    "templates/expo-local-chat/src/llamaRuntime.ts",
+    "templates/electron-local-chat/electron/llamaServerRuntime.ts",
+    "templates/electron-local-chat/src/ipcRuntime.ts",
+    "templates/electron-local-chat/src/lib/mediaPipeRuntime.ts",
+    "templates/electron-local-chat/src/lib/runtimeSelector.ts",
+    "templates/next-local-chat/src/lib/webLlmRuntime.ts"
+  ],
+  "exclude": ["**/node_modules", "dist", ".test-dist"]
+}

@@ -197,6 +197,12 @@ const CLI_COMMANDS: CliDescription[] = [
     description: 'Dump full manifest + file listing + sha256 hashes. Non-zero exit on tampering.',
   },
   {
+    name: 'doctor',
+    usage: 'machine doctor <model.gguf> [--run] [--server <path>] [--gpu-layers <n>] [--ctx <n>] [--json]',
+    description:
+      "Answer whether a local model can run on this machine: GGUF architecture/quantization/parameters/context, device memory, a memory-fit verdict, and the resolved activation contract. With --run it loads the model through llama-server and reports observed tokens/sec, acceleration, and whether grammar-constrained JSON actually works. Needs no catalog or network.",
+  },
+  {
     name: 'pull',
     usage: 'machine pull <id>[@<version>] [--catalog <url>] [--cache <dir>] [--force]',
     description: 'Download and cache a cartridge from a catalog. Sha256-verified. Atomic: partial pulls never corrupt the cache.',

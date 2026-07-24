@@ -5,6 +5,7 @@ import { dirname, join as pathJoin } from 'node:path';
 import { parseArgs } from './args';
 import { errorln, println, red } from './output';
 import { runDescribe } from './commands/describe';
+import { runDoctor } from './commands/doctor';
 import { runInfo } from './commands/info';
 import { runInit } from './commands/init';
 import { runInspect } from './commands/inspect';
@@ -16,6 +17,7 @@ import { runUnpack } from './commands/unpack';
 import { runValidate } from './commands/validate';
 
 const COMMANDS: Record<string, (argv: string[]) => Promise<number>> = {
+  doctor: runDoctor,
   init: runInit,
   pack: runPack,
   unpack: runUnpack,
@@ -35,6 +37,7 @@ Usage:
   machine <command> [args] [--flags]
 
 Commands:
+  doctor <model.gguf> [--run]    Can this model run here? Fit, speed, what's degraded.
   init <dir>                     Scaffold a new cartridge directory.
   pack <dir> [--out <file>]      Build a .mcart from an extracted cartridge.
   unpack <file> [--out <dir>]    Extract a .mcart into a directory.

@@ -79,12 +79,49 @@ test('electron-local-chat: llamaServerRuntime spawns llama-server and forwards G
       join(tmp, 'srv', 'electron', 'llamaServerRuntime.ts'),
       'utf8',
     );
-    assert(source.includes('llama-server.exe'), 'spawns llama-server.exe');
+    assert(source.includes('llama-server.exe'), 'knows the Windows binary name');
     assert(source.includes("from 'node:child_process'"), 'imports child_process for spawn');
     assert(source.includes('/v1/chat/completions'), 'talks OpenAI-compatible chat endpoint');
     assert(source.includes('grammar'), 'forwards grammar param to llama-server body');
     assert(source.includes('llamaServerRuntime'), 'exports llamaServerRuntime');
     assert(source.includes('disposeLlamaServer'), 'exports disposeLlamaServer for cleanup');
+  });
+});
+
+test('electron-local-chat: llamaServerRuntime resolves the binary per host platform', () => {
+  withTempDir((tmp) => {
+    runCli(['plat', '-t', 'electron-local-chat', '-y'], { cwd: tmp });
+    const source = readFileSync(
+      join(tmp, 'plat', 'electron', 'llamaServerRuntime.ts'),
+      'utf8',
+    );
+    for (const slug of ['win-x64', 'macos-arm64', 'macos-x64', 'linux-x64']) {
+      assert(source.includes(slug), `maps a vendor dir for ${slug}`);
+    }
+    assert(source.includes('process.platform'), 'branches on the host platform');
+    assert(
+      !source.includes("'vendor', 'llama-cpp', 'win-x64'"),
+      'no hardcoded win-x64 vendor path',
+    );
+    assert(source.includes('--n-gpu-layers'), 'offloads to GPU when the build supports it');
+  });
+});
+
+test('electron-local-chat: llamaServerRuntime sends full chat history, not just the last turn', () => {
+  withTempDir((tmp) => {
+    runCli(['hist', '-t', 'electron-local-chat', '-y'], { cwd: tmp });
+    const source = readFileSync(
+      join(tmp, 'hist', 'electron', 'llamaServerRuntime.ts'),
+      'utf8',
+    );
+    // The prior implementation collapsed completeChat to messages[messages.length - 1],
+    // which silently broke multi-turn chat AND generateText's tool loop.
+    assert(
+      !source.includes('messages[messages.length - 1]'),
+      'does not collapse the conversation to its last message',
+    );
+    assert(source.includes('messages.map(toServerMessage)'), 'forwards the whole history');
+    assert(source.includes("role === 'tool'"), 'folds the tool role into a user turn');
   });
 });
 
@@ -97,8 +134,27 @@ test('electron-local-chat: fetch-llama-cpp downloader resolves latest GitHub rel
     );
     assert(source.includes('ggml-org/llama.cpp'), 'targets the upstream llama.cpp repo');
     assert(source.includes('releases/latest'), 'pulls releases/latest dynamically');
-    assert(source.includes('llama-server.exe'), 'verifies llama-server.exe presence');
+    assert(source.includes('llama-server.exe'), 'knows the Windows binary name');
     assert(source.includes('version.json'), 'records version metadata for the runtime to read');
+  });
+});
+
+test('electron-local-chat: fetch-llama-cpp vendors a build for every supported host', () => {
+  withTempDir((tmp) => {
+    runCli(['hosts', '-t', 'electron-local-chat', '-y'], { cwd: tmp });
+    const source = readFileSync(
+      join(tmp, 'hosts', 'scripts', 'fetch-llama-cpp.js'),
+      'utf8',
+    );
+    for (const host of ['win32:x64', 'darwin:arm64', 'darwin:x64', 'linux:x64']) {
+      assert(source.includes(host), `selects an asset for ${host}`);
+    }
+    assert(source.includes('bin-macos-arm64'), 'matches the macOS arm64 release asset');
+    assert(source.includes('bin-ubuntu-x64'), 'matches the Linux release asset');
+    assert(source.includes('LLAMA_CPP_ASSET'), 'allows overriding the asset (CUDA/Vulkan builds)');
+    // POSIX hosts have no Expand-Archive; extraction must not be PowerShell-only.
+    assert(source.includes('unzip'), 'extracts via unzip on POSIX hosts');
+    assert(source.includes('chmodSync'), 'restores the executable bit on POSIX');
   });
 });
 

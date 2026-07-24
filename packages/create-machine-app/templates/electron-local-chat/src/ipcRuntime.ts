@@ -1,9 +1,10 @@
-import type {
-  ActivationCompletionOptions,
-  ActivationCompletionResult,
-  ActivationRuntime,
-  ActivationSession,
-  ActivationSessionCreateInput,
+import {
+  ACTIVATION_CONTRACT_SCHEMA_VERSION,
+  type ActivationCompletionOptions,
+  type ActivationCompletionResult,
+  type ActivationRuntime,
+  type ActivationSession,
+  type ActivationSessionCreateInput,
 } from 'machineai-activation';
 
 const BACKEND_ID = 'electron-ipc';
@@ -24,7 +25,7 @@ async function createIpcSession(
   };
 
   const capabilitySnapshot = {
-    schemaVersion: 1,
+    schemaVersion: ACTIVATION_CONTRACT_SCHEMA_VERSION,
     appRequirements: input.appRequirements ?? {},
     model: {
       modelId: input.modelId,
@@ -61,7 +62,7 @@ async function createIpcSession(
       notes: [],
     },
     resolvedContract: {
-      schemaVersion: 1,
+      schemaVersion: ACTIVATION_CONTRACT_SCHEMA_VERSION,
       compatible: true,
       degraded: false,
       compatibility: 'compatible' as const,

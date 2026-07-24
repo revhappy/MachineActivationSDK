@@ -64,6 +64,57 @@ test('rn-cli-local-chat: App.tsx wires MachineProvider + llamaRuntime', () => {
   });
 });
 
+test('rn-cli-local-chat: llamaRuntime matches the ActivationSession contract', () => {
+  withTempDir((tmp) => {
+    runCli(['rt', '-t', 'rn-cli-local-chat', '-y'], { cwd: tmp });
+    const source = readFileSync(join(tmp, 'rt', 'src', 'llamaRuntime.ts'), 'utf8');
+
+    // The contract is complete(prompt, options) / completeChat(messages, options).
+    // The prior implementation destructured the FIRST argument as an object
+    // (`async ({ prompt, system, maxTokens, stream, signal }) =>`), so every call
+    // from generateText/streamText passed a string where an object was expected.
+    // Templates aren't typechecked, so nothing caught it.
+    assert(
+      !source.includes('async ({ prompt,'),
+      'complete does not destructure its first argument',
+    );
+    assert(
+      !source.includes('async ({ messages,'),
+      'completeChat does not destructure its first argument',
+    );
+    assert(source.includes('complete: (prompt, options)'), 'complete takes (prompt, options)');
+    assert(
+      source.includes('completeChat: (messages, options)'),
+      'completeChat takes (messages, options)',
+    );
+    assert(!source.includes('stream?.onToken'), 'does not use the non-existent `stream` option');
+  });
+});
+
+test('rn-cli-local-chat: llamaRuntime enables GPU offload and forwards grammar', () => {
+  withTempDir((tmp) => {
+    runCli(['gpu', '-t', 'rn-cli-local-chat', '-y'], { cwd: tmp });
+    const source = readFileSync(join(tmp, 'gpu', 'src', 'llamaRuntime.ts'), 'utf8');
+
+    assert(!source.includes('n_gpu_layers: 0'), 'does not pin inference to the CPU');
+    assert(source.includes('REQUESTED_GPU_LAYERS'), 'requests GPU layer offload');
+    assert(source.includes('context.gpu'), 'reports observed GPU state, not an assumption');
+
+    // Grammar is what makes generateObject and the tool loop reliable on small
+    // on-device models; dropping it degrades both to prompt-and-hope.
+    assert(
+      source.includes('resolveStructuredOutputGrammar'),
+      'resolves grammar via the SDK helper',
+    );
+    assert(source.includes('structuredJsonOutput: true'), 'advertises structured output honestly');
+
+    // streamText consumes onChunk exclusively — an onToken-only adapter looks
+    // like it streams but delivers everything at once.
+    assert(source.includes('opts.onChunk?.('), 'emits onChunk so streamText streams');
+    assert(source.includes('opts.onToken?.('), 'emits onToken as well');
+  });
+});
+
 test('rn-cli-local-chat: ChatScreen uses machineai-activation-ui/native hooks', () => {
   withTempDir((tmp) => {
     runCli(['b', '-t', 'rn-cli-local-chat', '-y'], { cwd: tmp });

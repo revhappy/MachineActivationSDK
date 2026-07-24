@@ -24,6 +24,7 @@ import * as fs from 'node:fs';
 import * as net from 'node:net';
 import {
   ACTIVATION_CONTRACT_SCHEMA_VERSION,
+  type ActivationChatMessage,
   type ActivationCompletionOptions,
   type ActivationCompletionResult,
   type ActivationRuntime,
@@ -42,29 +43,72 @@ interface ServerHandle {
 }
 
 let activeServer: ServerHandle | null = null;
-let buildTag: string | null = null;
+let vendorInfo: VendorInfo | null = null;
 
-function getResourcePath(): string {
-  // In dev: <repo>/vendor/llama-cpp/win-x64
-  // In packaged app: <Resources>/llama-cpp/win-x64 (via extraResources)
-  const dev = path.join(app.getAppPath(), 'vendor', 'llama-cpp', 'win-x64');
-  if (fs.existsSync(dev)) return dev;
-  return path.join(process.resourcesPath, 'llama-cpp', 'win-x64');
+interface VendorInfo {
+  build: string;
+  slug: string;
+  exe: string;
+  acceleration: 'cpu' | 'gpu' | 'npu';
 }
 
-function readBuildTag(): string {
-  if (buildTag) return buildTag;
+// Host → vendor slug + binary name, mirroring scripts/fetch-llama-cpp.js.
+// macOS prebuilts ship with Metal; the rest are CPU unless the developer
+// vendored an accelerated build via LLAMA_CPP_ASSET.
+const HOST_DEFAULTS: Record<string, Omit<VendorInfo, 'build'>> = {
+  'win32:x64': { slug: 'win-x64', exe: 'llama-server.exe', acceleration: 'cpu' },
+  'darwin:arm64': { slug: 'macos-arm64', exe: 'llama-server', acceleration: 'gpu' },
+  'darwin:x64': { slug: 'macos-x64', exe: 'llama-server', acceleration: 'gpu' },
+  'linux:x64': { slug: 'linux-x64', exe: 'llama-server', acceleration: 'cpu' },
+};
+
+function hostDefault(): Omit<VendorInfo, 'build'> {
+  const key = `${process.platform}:${process.arch}`;
+  return (
+    HOST_DEFAULTS[key] ?? {
+      slug: `${process.platform}-${process.arch}`,
+      exe: process.platform === 'win32' ? 'llama-server.exe' : 'llama-server',
+      acceleration: 'cpu',
+    }
+  );
+}
+
+// version.json is written by scripts/fetch-llama-cpp.js and records exactly
+// which asset was vendored, so the runtime never has to guess.
+function readVendorInfo(): VendorInfo {
+  if (vendorInfo) return vendorInfo;
+  const fallback = hostDefault();
   try {
-    // Try packaged location first, then dev.
     const packaged = path.join(process.resourcesPath, 'llama-cpp', 'version.json');
     const dev = path.join(app.getAppPath(), 'vendor', 'llama-cpp', 'version.json');
     const versionPath = fs.existsSync(packaged) ? packaged : dev;
     const raw = JSON.parse(fs.readFileSync(versionPath, 'utf8'));
-    buildTag = String(raw.build ?? raw.tag ?? 'unknown');
+    vendorInfo = {
+      build: String(raw.build ?? raw.tag ?? 'unknown'),
+      slug: typeof raw.platform === 'string' ? raw.platform : fallback.slug,
+      exe: typeof raw.exe === 'string' ? raw.exe : fallback.exe,
+      acceleration:
+        raw.acceleration === 'gpu' || raw.acceleration === 'npu'
+          ? raw.acceleration
+          : fallback.acceleration,
+    };
   } catch {
-    buildTag = 'unknown';
+    vendorInfo = { build: 'unknown', ...fallback };
   }
-  return buildTag;
+  return vendorInfo;
+}
+
+function readBuildTag(): string {
+  return readVendorInfo().build;
+}
+
+function getResourcePath(): string {
+  // In dev: <repo>/vendor/llama-cpp/<slug>
+  // In packaged app: <Resources>/llama-cpp/<slug> (via extraResources)
+  const { slug } = readVendorInfo();
+  const dev = path.join(app.getAppPath(), 'vendor', 'llama-cpp', slug);
+  if (fs.existsSync(dev)) return dev;
+  return path.join(process.resourcesPath, 'llama-cpp', slug);
 }
 
 function logToFile(line: string): void {
@@ -120,11 +164,11 @@ async function waitForHealth(baseUrl: string, timeoutMs: number): Promise<void> 
 
 async function startServer(modelPath: string): Promise<ServerHandle> {
   const binDir = getResourcePath();
-  const exe = path.join(binDir, 'llama-server.exe');
+  const exe = path.join(binDir, readVendorInfo().exe);
   if (!fs.existsSync(exe)) {
     throw new Error(
-      `llama-server.exe not found at ${exe}. ` +
-        `Run \`npm run fetch:llama\` to vendor a llama.cpp release.`,
+      `${readVendorInfo().exe} not found at ${exe}. ` +
+        `Run \`npm run fetch:llama\` to vendor a llama.cpp release for this platform.`,
     );
   }
   const port = await pickFreePort();
@@ -137,6 +181,12 @@ async function startServer(modelPath: string): Promise<ServerHandle> {
     '--jinja',
     '--log-disable',
   ];
+  // Offload to GPU when the vendored build supports it (macOS Metal, or a
+  // CUDA/Vulkan build pulled via LLAMA_CPP_ASSET). llama-server clamps the
+  // layer count to whatever the model actually has.
+  if (readVendorInfo().acceleration === 'gpu') {
+    args.push('--n-gpu-layers', '999');
+  }
   logToFile(`spawning llama-server (build ${readBuildTag()}): ${exe} ${args.join(' ')}`);
 
   const proc = spawn(exe, args, {
@@ -214,6 +264,25 @@ interface ChatRequestBody {
   grammar?: string;
 }
 
+/**
+ * Forward a caller's AbortSignal into our own fetch controller. Returns a
+ * detach function that must run when the completion settles, so a signal
+ * belonging to a finished call can't cancel the next one.
+ */
+function chainAbortSignal(
+  signal: AbortSignal | undefined,
+  controller: AbortController,
+): () => void {
+  if (!signal) return () => undefined;
+  if (signal.aborted) {
+    controller.abort();
+    return () => undefined;
+  }
+  const onAbort = (): void => controller.abort();
+  signal.addEventListener('abort', onAbort, { once: true });
+  return () => signal.removeEventListener('abort', onAbort);
+}
+
 async function* iterateSse(stream: ReadableStream<Uint8Array>): AsyncGenerator<string> {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
@@ -234,10 +303,33 @@ async function* iterateSse(stream: ReadableStream<Uint8Array>): AsyncGenerator<s
   }
 }
 
+// Flatten SDK message parts to plain text and fold the `tool` role into a user
+// turn. Most local chat templates (Gemma, Llama 3, ChatML via --jinja) have no
+// `tool` role; sending one makes the template either reject the turn or render
+// it wrong, which silently breaks generateText's tool loop.
+function toServerMessage(
+  message: ActivationChatMessage,
+): ChatRequestBody['messages'][number] {
+  const text =
+    typeof message.content === 'string'
+      ? message.content
+      : message.content
+          .map((part) => (part.type === 'text' ? part.text : ''))
+          .filter(Boolean)
+          .join('\n');
+
+  if (message.role === 'tool') {
+    return { role: 'user', content: `Tool result: ${text}` };
+  }
+  return { role: message.role, content: text };
+}
+
 async function createLlamaServerSession(
   input: ActivationSessionCreateInput,
 ): Promise<ActivationSession> {
   const handle = await getOrStartServer(input.filePath);
+  const vendor = readVendorInfo();
+  const acceleration = vendor.acceleration;
 
   const resolvedCapabilities = {
     textCompletion: true,
@@ -245,9 +337,11 @@ async function createLlamaServerSession(
     streaming: true,
     visionImageInput: false,
     structuredJsonOutput: true,
-    toolCalling: false,
+    // The tool loop rides on grammar-constrained JSON, which this lane
+    // forwards end-to-end — so tool calling genuinely works here.
+    toolCalling: true,
     projectorReady: false,
-    accelerationMode: 'cpu' as const,
+    accelerationMode: acceleration,
   };
 
   const capabilitySnapshot = {
@@ -262,10 +356,10 @@ async function createLlamaServerSession(
       supportsTextChat: true,
       supportsStreaming: true,
       structuredJsonOutput: true,
-      toolCalling: false,
+      toolCalling: true,
       requiresProjector: false,
       projectorAttached: false,
-      notes: [`llama.cpp build ${readBuildTag()}`],
+      notes: [`llama.cpp build ${vendor.build} (${vendor.slug})`],
     },
     backend: {
       backendId: BACKEND_ID,
@@ -274,17 +368,17 @@ async function createLlamaServerSession(
       supportsStreaming: true,
       supportsVision: false,
       supportsStructuredJsonOutput: true,
-      supportsToolCalling: false,
+      supportsToolCalling: true,
       supportsCancellation: true,
-      supportedAccelerationModes: ['cpu' as const],
+      supportedAccelerationModes: [acceleration],
       detectedDevices: [],
-      notes: [],
+      notes: [`vendored asset: ${vendor.slug}`],
     },
     device: {
-      platform: 'electron-main-subprocess',
+      platform: `electron-main-subprocess (${process.platform}/${process.arch})`,
       cameraAvailable: false,
       photoLibraryAvailable: false,
-      availableAccelerationModes: ['cpu' as const],
+      availableAccelerationModes: [acceleration],
       notes: [],
     },
     resolvedContract: {
@@ -300,20 +394,25 @@ async function createLlamaServerSession(
     diagnostics: {
       sourceAdapterId: BACKEND_ID,
       backendId: BACKEND_ID,
-      accelerationMode: 'cpu' as const,
+      accelerationMode: acceleration,
     },
   };
 
   let activeAbort: AbortController | null = null;
 
-  const runComplete = async (
-    prompt: string,
+  const runChat = async (
+    history: ChatRequestBody['messages'],
     options: ActivationCompletionOptions | undefined,
   ): Promise<ActivationCompletionResult> => {
     const opts = options ?? {};
     const messages: ChatRequestBody['messages'] = [];
-    if (opts.systemPrompt) messages.push({ role: 'system', content: opts.systemPrompt });
-    messages.push({ role: 'user', content: prompt });
+    // Only prepend systemPrompt if the caller didn't already supply a system
+    // turn — generateText's tool loop bakes its system prompt into messages[0]
+    // and also passes `system` through, which would otherwise duplicate it.
+    if (opts.systemPrompt && !history.some((m) => m.role === 'system')) {
+      messages.push({ role: 'system', content: opts.systemPrompt });
+    }
+    messages.push(...history);
 
     const body: ChatRequestBody = {
       model: 'local',
@@ -327,48 +426,60 @@ async function createLlamaServerSession(
       grammar: opts.grammar,
     };
 
-    activeAbort = new AbortController();
+    const controller = new AbortController();
+    activeAbort = controller;
+    // The SDK passes a per-completion `abortSignal` (generateText/streamText/
+    // generateObject all forward it). Chaining it into the fetch controller
+    // cancels the HTTP request itself, which is tighter than waiting for the
+    // session-wide `abort()` — and it stops llama-server generating tokens
+    // nobody is going to read.
+    const detachCallerSignal = chainAbortSignal(opts.abortSignal, controller);
+
     const started = Date.now();
     let tokensGenerated = 0;
     let accumulated = '';
 
-    const res = await fetch(`${handle.baseUrl}/v1/chat/completions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      signal: activeAbort.signal,
-    });
-    if (!res.ok || !res.body) {
-      const errText = await res.text().catch(() => '<no body>');
-      throw new Error(`llama-server returned ${res.status}: ${errText}`);
-    }
-
-    for await (const data of iterateSse(res.body)) {
-      if (data === '[DONE]') break;
-      let parsed: { choices?: Array<{ delta?: { content?: string }; finish_reason?: string }> };
-      try {
-        parsed = JSON.parse(data);
-      } catch {
-        continue;
-      }
-      const delta = parsed.choices?.[0]?.delta?.content ?? '';
-      if (!delta) continue;
-      tokensGenerated += 1;
-      accumulated += delta;
-      const seconds = (Date.now() - started) / 1000;
-      const tokensPerSecond = seconds > 0 ? tokensGenerated / seconds : 0;
-      opts.onToken?.(delta);
-      opts.onChunk?.({
-        rawToken: delta,
-        text: accumulated,
-        textDelta: delta,
-        reasoningText: '',
-        reasoningDelta: '',
-        tokensGenerated,
-        tokensPerSecond,
+    try {
+      const res = await fetch(`${handle.baseUrl}/v1/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
       });
+      if (!res.ok || !res.body) {
+        const errText = await res.text().catch(() => '<no body>');
+        throw new Error(`llama-server returned ${res.status}: ${errText}`);
+      }
+
+      for await (const data of iterateSse(res.body)) {
+        if (data === '[DONE]') break;
+        let parsed: { choices?: Array<{ delta?: { content?: string }; finish_reason?: string }> };
+        try {
+          parsed = JSON.parse(data);
+        } catch {
+          continue;
+        }
+        const delta = parsed.choices?.[0]?.delta?.content ?? '';
+        if (!delta) continue;
+        tokensGenerated += 1;
+        accumulated += delta;
+        const seconds = (Date.now() - started) / 1000;
+        const tokensPerSecond = seconds > 0 ? tokensGenerated / seconds : 0;
+        opts.onToken?.(delta);
+        opts.onChunk?.({
+          rawToken: delta,
+          text: accumulated,
+          textDelta: delta,
+          reasoningText: '',
+          reasoningDelta: '',
+          tokensGenerated,
+          tokensPerSecond,
+        });
+      }
+    } finally {
+      detachCallerSignal();
+      if (activeAbort === controller) activeAbort = null;
     }
-    activeAbort = null;
 
     const seconds = (Date.now() - started) / 1000;
     return {
@@ -384,18 +495,8 @@ async function createLlamaServerSession(
     backendId: BACKEND_ID,
     resolvedContract: capabilitySnapshot.resolvedContract,
     capabilitySnapshot,
-    complete: (prompt, options) => runComplete(prompt, options),
-    completeChat: async (messages, options) => {
-      const last = messages[messages.length - 1];
-      const lastContent =
-        typeof last?.content === 'string'
-          ? last.content
-          : (last?.content ?? [])
-              .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-              .map((p) => p.text)
-              .join('\n');
-      return runComplete(lastContent ?? '', options);
-    },
+    complete: (prompt, options) => runChat([{ role: 'user', content: prompt }], options),
+    completeChat: (messages, options) => runChat(messages.map(toServerMessage), options),
     contextState: async () => ({
       strategy: 'fresh',
       reuseStateAvailable: false,
@@ -407,7 +508,7 @@ async function createLlamaServerSession(
     diagnostics: async () => ({
       sourceAdapterId: BACKEND_ID,
       backendId: BACKEND_ID,
-      accelerationMode: 'cpu',
+      accelerationMode: acceleration,
     }),
     abort: async () => {
       if (activeAbort) {

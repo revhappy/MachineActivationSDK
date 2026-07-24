@@ -2,6 +2,15 @@
 
 This file describes the current implementation posture of the activation SDK.
 
+> **Product focus (2026-07-24):** this is **the adapter layer for local models** —
+> plug a GGUF into any app, on any OS, to **test** it and to **package** it. Scope is
+> Windows + macOS + Linux + Android + iOS. The Vercel-AI-SDK-shaped surface is the
+> porting on-ramp, not the identity. Full statement in `TODO.md` §0.
+>
+> **Per-platform truth lives in [PLATFORM_MATRIX.md](./PLATFORM_MATRIX.md)**, which
+> distinguishes *wired and typechecked* from *actually run on hardware*. As of
+> 2026-07-24 every non-Windows lane is the former, not the latter.
+
 ## Already Implemented
 
 - standalone top-level package boundary
@@ -97,15 +106,23 @@ That means an outside consumer can implement the session runtime first and add r
 
 ## Highest-Value Next Steps
 
-1. Promote observed probe results more clearly in the UI.
-2. Expand probe coverage beyond:
-   - text sanity
-   - streaming
-   - structured JSON
-   - projector init
-3. Exercise the release workflow publicly and validate the npm publish path end to end.
-4. Deepen the llama.cpp lane around mature backend features that the SDK should reuse rather than rebuild.
-5. Improve acceleration telemetry and richer context/session reporting for LiteRT.
-6. Deepen the `.litertlm` lane with broader diagnostics, packaging guidance, and on-device validation.
-7. Expand the model-import and registry lane beyond GGUF-first assumptions.
-8. Continue tightening the standalone SDK story in host-facing and framework-facing docs.
+The authoritative, prioritized queue is **[TODO.md](./TODO.md)**. In short:
+
+1. **Run a model on macOS, Linux, iOS and Android.** Windows x64 is verified on
+   hardware as of 2026-07-24; the other four lanes are wired and typechecked but
+   unverified. Nothing substitutes for this — the Windows run alone surfaced two
+   defects that 199 passing tests had not. `machine doctor --run <model.gguf>`
+   does the check in one command.
+2. **Stand up a real catalog** — the default `machine pull` URL is currently a 404,
+   so the flagship command fails for every user.
+3. **`streamText({ tools })`** — you can stream tokens or run an agentic loop, not
+   both (`sdkgaps.md` #1). Now the largest remaining API gap.
+
+Closed 2026-07-24: `machine doctor` shipped; the tool-loop grammar cliff, `abortSignal`,
+`toolChoice`, the duplicated system prompt, zod v4 support, and the long-standing
+test-suite stall are all fixed.
+
+Longer-standing items, still valid: promote observed probe results in the UI; expand
+probe coverage beyond text/streaming/JSON/projector; improve acceleration telemetry
+and context reporting for LiteRT; deepen the `.litertlm` lane; expand model import
+beyond GGUF-first assumptions.
