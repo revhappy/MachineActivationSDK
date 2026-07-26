@@ -183,6 +183,35 @@ class SupervisionTests(unittest.TestCase):
         self.assertIn("Could not run", str(caught.exception))
 
 
+class ProxyTests(unittest.TestCase):
+    def test_a_system_proxy_does_not_capture_local_traffic(self) -> None:
+        # A corporate laptop with $http_proxy set would otherwise send requests
+        # for 127.0.0.1 to the proxy: it has no route back to this machine, so
+        # "local model" becomes a connection error — and any request that did
+        # get through would carry the user's prompts somewhere they never chose.
+        blackhole = "http://127.0.0.1:9"  # discard port
+        previous = {
+            name: os.environ.get(name)
+            for name in ("http_proxy", "HTTP_PROXY", "all_proxy", "ALL_PROXY", "no_proxy")
+        }
+        os.environ.update(
+            {"http_proxy": blackhole, "HTTP_PROXY": blackhole, "all_proxy": blackhole}
+        )
+        os.environ.pop("no_proxy", None)
+        try:
+            with MachineServer("model.gguf", port=0, machine_cmd=FAKE_CLI) as server:
+                self.assertTrue(
+                    server.client(timeout=10.0).is_ready(),
+                    "a system proxy captured traffic meant for the local model",
+                )
+        finally:
+            for name, value in previous.items():
+                if value is None:
+                    os.environ.pop(name, None)
+                else:
+                    os.environ[name] = value
+
+
 class DiscoveryTests(unittest.TestCase):
     def test_machine_cli_env_override_wins(self) -> None:
         from machine_activation import find_machine_cli

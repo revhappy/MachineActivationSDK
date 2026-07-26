@@ -128,6 +128,14 @@ class MachineClient:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.timeout = timeout
+        # Never consult the system proxy. `urllib` would otherwise route
+        # http://127.0.0.1 through $http_proxy, and on a corporate laptop that
+        # is both broken and wrong: the proxy has no route back to your own
+        # machine, and anything that *did* get through would send prompts
+        # somewhere you did not choose. `no_proxy` usually saves you, but it is
+        # a setting people forget, and a local-first client should not depend on
+        # remembering it. Local traffic stays local.
+        self._opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
     # ------------------------------------------------------------------
     # Status
@@ -225,7 +233,7 @@ class MachineClient:
         )
         request = self._request("/v1/chat/completions", body)
         try:
-            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+            with self._opener.open(request, timeout=self.timeout) as response:
                 for raw_line in response:
                     line = raw_line.decode("utf-8").strip()
                     if not line.startswith("data:"):
@@ -464,7 +472,7 @@ class MachineClient:
 
     def _send(self, request: urllib.request.Request) -> Dict[str, Any]:
         try:
-            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+            with self._opener.open(request, timeout=self.timeout) as response:
                 return json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as error:
             detail = error.read().decode("utf-8", errors="replace")

@@ -17,10 +17,27 @@ from __future__ import annotations
 
 import json
 import os
+import socketserver
 import sys
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
+
+
+class LocalHTTPServer(HTTPServer):
+    """`HTTPServer` without the reverse-DNS lookup in `server_bind`.
+
+    `http.server.HTTPServer.server_bind` calls `socket.getfqdn(host)` purely to
+    fill in `server_name`. On a macOS CI runner that lookup blocks for tens of
+    seconds, which made every test here slow and pushed a restart past its
+    30-second deadline — the suite took six minutes on macOS and twenty seconds
+    everywhere else. We only ever serve 127.0.0.1, so there is nothing to look up.
+    """
+
+    def server_bind(self) -> None:
+        socketserver.TCPServer.server_bind(self)
+        self.server_name = "127.0.0.1"
+        self.server_port = self.server_address[1]
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -54,7 +71,7 @@ def main(argv: list) -> int:
         print(json.dumps({"event": "error", "message": "fake failure"}), flush=True)
         return 1
 
-    server = HTTPServer(("127.0.0.1", port), Handler)
+    server = LocalHTTPServer(("127.0.0.1", port), Handler)
     actual_port = server.server_address[1]
     threading.Thread(target=server.serve_forever, daemon=True).start()
 

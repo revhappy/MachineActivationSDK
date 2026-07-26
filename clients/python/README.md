@@ -155,4 +155,10 @@ A smoke test: prints the activation report, then streams an answer.
 Requires Python 3.9+. Standard library only — `urllib`, `json`, `subprocess`,
 `threading`.
 
+**Your proxy is never used.** `urllib` would otherwise route `http://127.0.0.1`
+through `$http_proxy`, which on a corporate laptop breaks local inference and, if
+it did connect, would send prompts through a host you never chose. This client
+bypasses the system proxy for its own traffic and does not rely on you having set
+`no_proxy`.
+
 MIT.
