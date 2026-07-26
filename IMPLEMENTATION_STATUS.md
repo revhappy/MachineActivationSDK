@@ -113,14 +113,27 @@ The authoritative, prioritized queue is **[TODO.md](./TODO.md)**. In short:
    unverified. Nothing substitutes for this — the Windows run alone surfaced two
    defects that 199 passing tests had not. `machine doctor --run <model.gguf>`
    does the check in one command.
-2. **Stand up a real catalog** — the default `machine pull` URL is currently a 404,
-   so the flagship command fails for every user.
-3. **`streamText({ tools })`** — you can stream tokens or run an agentic loop, not
-   both (`sdkgaps.md` #1). Now the largest remaining API gap.
+2. **Grow the catalog past one cartridge.** It is live and `machine pull` works
+   with no flags, but a catalog of one is a demo.
+3. **Publish `machine-activation` to PyPI.** The package builds and passes
+   `twine check`; the trusted publisher has not been registered, so
+   `pip install machine-activation` still does not work. `PUBLISHING.md` has the
+   one-time steps, which only the account owner can perform.
 
 Closed 2026-07-24: `machine doctor` shipped; the tool-loop grammar cliff, `abortSignal`,
 `toolChoice`, the duplicated system prompt, zod v4 support, and the long-standing
 test-suite stall are all fixed.
+
+Closed 2026-07-25 (session 17): one llama-server adapter instead of four divergent
+copies; `machine serve`; tool calling over HTTP; the Python client; thinking-model
+reasoning channels; the loading-vs-timeout fix.
+
+Closed 2026-07-26 (session 18): `streamText({ tools })` streams an agentic loop
+(`sdkgaps.md` #1, the last large API gap) with the loop core shared with
+`generateText`; `machine serve --supervised` plus a Python `MachineServer` so an
+app starts its own model instead of asking a user to; the Python client became a
+real distribution; Agent On Deck's local coverage became executable rather than
+prose.
 
 Longer-standing items, still valid: promote observed probe results in the UI; expand
 probe coverage beyond text/streaming/JSON/projector; improve acceleration telemetry

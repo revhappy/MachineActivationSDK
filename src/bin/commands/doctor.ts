@@ -31,11 +31,14 @@ import {
   red,
   yellow,
 } from '../output';
+// The same built-in adapter apps consume. `doctor --run` measuring a *different*
+// llama-server implementation than the one shipped would make its numbers a
+// report on dead code.
 import {
   discoverLlamaServer,
   readVendoredAcceleration,
-  startLlamaServerRuntime,
-} from './doctorRuntime';
+  startLlamaServer,
+} from '../../runtime/nodeLlamaServer';
 
 const HELP = `\
 machine doctor <model.gguf | cartridge-id> [flags]
@@ -71,6 +74,8 @@ interface LiveRunReport {
   tokensGenerated?: number;
   tokensPerSecond?: number;
   sample?: string;
+  /** Set when the model emitted chain-of-thought on the reasoning channel. */
+  reasoningSample?: string;
   grammarConstrainedJson?: boolean;
   structuredSample?: unknown;
   error?: string;
@@ -390,10 +395,10 @@ async function runLive(input: LiveRunInput): Promise<LiveRunReport> {
   }
 
   const startedLoad = Date.now();
-  let handle: Awaited<ReturnType<typeof startLlamaServerRuntime>> | undefined;
+  let handle: Awaited<ReturnType<typeof startLlamaServer>> | undefined;
 
   try {
-    handle = await startLlamaServerRuntime({
+    handle = await startLlamaServer({
       serverBinary: input.serverBinary,
       modelPath: input.modelPath,
       contextTokens: input.contextTokens,
@@ -411,11 +416,23 @@ async function runLive(input: LiveRunInput): Promise<LiveRunReport> {
     const { streamText } = await import('../../sdk/streamText');
     const requestedAt = Date.now();
     let firstTokenAt = 0;
-    const stream = streamText({ model, prompt: input.prompt, maxTokens: 96 });
+    let reasoningSeen = '';
+    const stream = streamText({
+      model,
+      prompt: input.prompt,
+      maxTokens: 96,
+      onReasoning: (text) => {
+        reasoningSeen = text;
+      },
+    });
     for await (const _delta of stream.textStream) {
       if (firstTokenAt === 0) firstTokenAt = Date.now();
     }
     const sampleText = await stream.text;
+    // A thinking model can spend its whole budget reasoning and return an
+    // empty answer. Reporting that explicitly is the difference between
+    // "the model produced nothing" and "the model needs a bigger budget".
+    const reasoningText = reasoningSeen.trim();
     const usage = await stream.usage;
     const diagnostics = await model.getSession().then((s) => s.diagnostics());
 
@@ -452,6 +469,7 @@ async function runLive(input: LiveRunInput): Promise<LiveRunReport> {
       tokensGenerated: usage.completionTokens,
       tokensPerSecond: usage.tokensPerSecond,
       sample: sampleText.trim().slice(0, 240),
+      reasoningSample: reasoningText ? reasoningText.slice(0, 240) : undefined,
       grammarConstrainedJson,
       structuredSample,
       logHighlights: highlightLogs(handle.logs),
@@ -587,6 +605,19 @@ function printHuman(
       );
       if (report.liveRun.sample) {
         println(`  ${dim(`sample: ${report.liveRun.sample.replace(/\s+/g, ' ')}`)}`);
+      }
+      if (report.liveRun.reasoningSample) {
+        println(
+          `  ${dim(`reasoning: ${report.liveRun.reasoningSample.replace(/\s+/g, ' ')}`)}`,
+        );
+        if (!report.liveRun.sample) {
+          // Without this the report reads as "the model generated nothing",
+          // which is the opposite of what happened.
+          println(
+            `  ${yellow('note:')}           this is a thinking model — it spent the whole`,
+          );
+          println('                  token budget reasoning and never reached an answer.');
+        }
       }
       if (report.liveRun.structuredSample) {
         println(`  ${dim(`structured: ${JSON.stringify(report.liveRun.structuredSample)}`)}`);

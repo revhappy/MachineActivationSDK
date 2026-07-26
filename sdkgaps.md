@@ -12,17 +12,34 @@
 
 Each item: **what → evidence → impact → suggested fix → priority.**
 
-> **Status as of 2026-07-24 (session 16).** Items **2, 3, 4, 5 and 6 are fixed**
-> in `src/`; see `TODO.md` §5–§7 and the roadmap session log for what landed.
-> Still open: **1** (`streamText` has no tools — now the largest remaining API
-> gap), **7** (`onToken`/`onChunk` ambiguity — behavior is settled, the docs
-> aren't), **8** (unknown tool name ends the loop silently), **9**
+> **Status as of 2026-07-26 (session 18).** Items **1, 2, 3, 4, 5, 6 and 7 are
+> fixed** in `src/`. Session 18 closed **1** (`streamText({ tools })` streams an
+> agentic loop, sharing the loop core with `generateText` via `src/sdk/toolLoop.ts`)
+> and the documentation half of **7** (`onChunk` is now declared as the callback
+> an adapter must emit; `onToken` is marked as insufficient to stream from).
+> Still open: **8** (unknown tool name ends the loop silently), **9**
 > (enhancement). Individual sections below are left as originally written so the
 > field evidence stays intact.
 
 ---
 
-## 1. `streamText` has no tool support
+## 1. `streamText` has no tool support — ✅ fixed 2026-07-26
+
+> **Landed as suggested, including the shared loop core.** `StreamTextOptions`
+> now takes `tools`/`toolChoice`/`maxSteps`/`onStepFinish`, and
+> `StreamTextResult` gained `steps` and `toolCalls`. Tool-selection steps are
+> generated non-streamed (they are a grammar-locked JSON envelope) and reported
+> through `onStepFinish`; the final answer streams.
+>
+> The part that was not obvious from the outside: the final answer is *also*
+> inside the envelope, so "stream only the final-answer step" still meant
+> emitting `{"answer":"Par`. `createEnvelopeStreamParser` in `toolProtocol.ts`
+> decodes the `answer` string incrementally — including escapes split across
+> chunk boundaries — so the answer streams as plain text while the grammar stays
+> locked. Nothing else is ever emitted mid-flight, because text shown to a user
+> cannot be withdrawn.
+>
+> The loop itself moved to `src/sdk/toolLoop.ts` and both drivers call it.
 - **What:** you can run an agentic tool loop (`generateText`) OR stream tokens
   (`streamText`), but not both. There's no way to stream an agent's output.
 - **Evidence:** `StreamTextOptions` (`src/sdk/types.ts:100`) extends only

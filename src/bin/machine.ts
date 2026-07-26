@@ -13,11 +13,13 @@ import { runList } from './commands/list';
 import { runPack } from './commands/pack';
 import { runPull } from './commands/pull';
 import { runSearch } from './commands/search';
+import { runServe } from './commands/serve';
 import { runUnpack } from './commands/unpack';
 import { runValidate } from './commands/validate';
 
 const COMMANDS: Record<string, (argv: string[]) => Promise<number>> = {
   doctor: runDoctor,
+  serve: runServe,
   init: runInit,
   pack: runPack,
   unpack: runUnpack,
@@ -38,6 +40,7 @@ Usage:
 
 Commands:
   doctor <model.gguf> [--run]    Can this model run here? Fit, speed, what's degraded.
+  serve <model.gguf|id>          Serve a local model over HTTP (OpenAI-compatible).
   init <dir>                     Scaffold a new cartridge directory.
   pack <dir> [--out <file>]      Build a .mcart from an extracted cartridge.
   unpack <file> [--out <dir>]    Extract a .mcart into a directory.

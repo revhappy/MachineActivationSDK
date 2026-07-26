@@ -10,6 +10,7 @@ import './sdk/generateText.test';
 import './sdk/streamText.test';
 import './sdk/generateObject.test';
 import './sdk/tool.test';
+import './sdk/envelopeStream.test';
 import './sdk/jsonSchemaToGbnf.test';
 import './sdk/zodToJsonSchema.test';
 import './sdk/zodVersions.test';
@@ -35,6 +36,11 @@ import './cli/search.test';
 import './cli/list.test';
 import './cli/describe.test';
 import './cli/doctor.test';
+import './cli/serve.test';
+import './runtime/llamaServerRuntime.test';
+import './runtime/stubRuntime.test';
+import './runtime/sdkIntegration.test';
+import './runtime/portability.test';
 import { finish } from './_harness';
 
 void finish().then(

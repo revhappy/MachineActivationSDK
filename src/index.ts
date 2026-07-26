@@ -13,6 +13,10 @@ export * from './activation/activationSetup';
 export * from './framework/createMachineFramework';
 export * from './framework/index';
 
+// Built-in runtime adapters (portable). The Node-only llama-server process
+// manager lives in `machineai-activation/node`.
+export * from './runtime/index';
+
 // Drop-in cartridge-ready API (M1 + M7). See CARTRIDGE_SDK_ROADMAP.md.
 export {
   createMachine,

@@ -1,0 +1,73 @@
+name: Python Client Release
+
+# Publishes `machine-activation` to PyPI.
+#
+# Uses trusted publishing (OIDC), not an API token: PyPI mints a short-lived
+# credential for this exact workflow, so there is no long-lived secret in the
+# repo to leak or rotate. It needs a one-time setup on PyPI — see PUBLISHING.md
+# — and will fail with "invalid-publisher" until that exists.
+#
+# The tag glob is deliberately separate from `activation-sdk-v*`: the npm
+# packages and the Python client version independently, and one shared tag would
+# force a needless release of whichever side did not change.
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'python-client-v*'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: clients/python
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build tooling
+        run: python -m pip install --upgrade build twine
+
+      - name: Run tests
+        run: python -m unittest discover -s tests -t .
+
+      - name: Build sdist and wheel
+        run: python -m build
+
+      - name: Check metadata
+        run: python -m twine check dist/*
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-dist
+          path: clients/python/dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/python-client-v')
+    environment: pypi
+    permissions:
+      # Required for trusted publishing. Without it the upload step cannot
+      # request an OIDC token and fails before it reaches PyPI.
+      id-token: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-dist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

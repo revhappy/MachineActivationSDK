@@ -45,7 +45,19 @@ export interface ActivationCompletionOptions {
    * of the whole session.
    */
   abortSignal?: AbortSignal;
+  /**
+   * Convenience callback for raw token text.
+   *
+   * Optional for an adapter to emit, and **not** what the SDK streams from. An
+   * adapter that implements only this one appears to work and then delivers
+   * every `streamText` in a single blob at the end.
+   */
   onToken?: (token: string) => void;
+  /**
+   * The callback an adapter must emit to stream. `streamText` reads deltas
+   * exclusively from here, as does the reasoning channel and the tool loop's
+   * envelope decoding — `onToken` carries too little to drive any of them.
+   */
   onChunk?: (chunk: ActivationCompletionChunk) => void;
 }
 

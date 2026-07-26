@@ -32,3 +32,16 @@ export {
   createNodeCartridgeResolver,
   type NodeCartridgeResolverOptions,
 } from './catalog/nodeCartridgeResolver';
+
+// llama-server process management. Spawns the binary, waits for the model to
+// load, and hands back an ActivationRuntime pointed at it. The portable adapter
+// itself (`llamaServerRuntime`) is exported from the main barrel.
+export {
+  closePooledLlamaServer,
+  discoverLlamaServer,
+  ensureLlamaServer,
+  readVendoredAcceleration,
+  startLlamaServer,
+  type LlamaServerHandle,
+  type StartLlamaServerOptions,
+} from './runtime/nodeLlamaServer';

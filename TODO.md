@@ -102,6 +102,122 @@ matrix is "wired and typechecked," not "verified." See item 2.
 
 ---
 
+## 1c. ✅ Done 2026-07-25 (session 17) — the adapter layer became installable, and reachable from any language
+
+The product claim is "plug a GGUF into any app on any OS." Session 17 fixed the two
+things that made it untrue in practice.
+
+- **There were four copies of the llama-server adapter**, and no fix ever moved
+  between them: `doctorRuntime.ts`, the `electron-local-chat` template's vendored
+  526-line file, `Collecta-Local/lib/local/runtime.ts`, and
+  `Ingredient analyzer/src/services/capacitorMachineActivationRuntime.ts`. Each
+  had drifted differently — dropped chat history, `streaming: false`, a
+  `capabilitySnapshot` missing `schemaVersion`. Now **one** implementation in
+  `src/runtime/`, portable (`llamaServerRuntime`, `stubRuntime` — no `node:*`) with
+  the process manager (`startLlamaServer`, `ensureLlamaServer`,
+  `discoverLlamaServer`) behind `machineai-activation/node`. Doctor and the
+  template both delegate; the template went 526 → 141 lines. A test enforces the
+  portable/Node split at the source level.
+- **`machine serve`** — OpenAI-compatible HTTP (`/v1/chat/completions` streaming +
+  non-streaming, `/v1/completions`, `/v1/models`) plus `/machine/activation` for
+  the contract. This is what makes a non-JS app possible at all;
+  `response_format.json_schema` compiles to GBNF so a Python caller gets the same
+  guarantee `generateObject` gives TypeScript.
+- **Tool calling over HTTP**, so an *agent* is portable and not just a chat box.
+  `tools`/`tool_choice` in, OpenAI `tool_calls` out, client executes, feeds a
+  `tool` message back. The envelope, grammar and parser moved to
+  `src/sdk/toolProtocol.ts` and are shared verbatim with `generateText`'s
+  in-process loop — same reliability, different driver. **Verified live from
+  Python against Gemma 4:** the model called `get_weather({city:'Paris'})`, Python
+  executed it, and the model answered from the result in 28.6 s.
+- **The Python client is `pip install machine-activation`**, not a file to vendor.
+  `pyproject.toml` + `chat_tools`/`ToolCall` + a `machine-activation-check`
+  console script. Agent On Deck's `sys.path` hack is gone.
+- **`clients/python/machine_activation.py`** — dependency-free Python client
+  (stdlib only): `chat`, `chat_stream`, `chat_json`, `describe_image`,
+  `activation()`.
+- **Found on hardware: thinking models were reported as producing nothing.** A live
+  Gemma 4 E4B run measured **0 tokens and an empty sample** because the adapter
+  read only `delta.content` and the model spent its whole budget on
+  `reasoning_content`. Fixed end to end (`reasoningText`/`reasoningDelta`,
+  `streamText`'s new `onReasoning`, and a doctor report line). After the fix the
+  same run measured 93 tokens at 2.5 tok/s. `generateObject` had always worked,
+  because a grammar forces immediate JSON — which is exactly why static analysis
+  and 199 passing tests never saw it.
+- **Also found on hardware: a loading model was being killed as a timeout.**
+  `/health` returns `503 loading model` while warming; the fixed 120 s deadline
+  aborted a load that was progressing. The wait is now a *silence* budget that
+  resets on observed progress, bounded by `loadTimeoutMs` (15 min).
+- **Smaller:** `grammar` is now a public option on `generateText`/`streamText`
+  (constrained *streaming* was impossible before); `extraBody` passes backend
+  sampler knobs the contract does not model; `responseFormat: 'json'` reaches the
+  wire as `response_format`.
+- **All three target apps repointed and verified** — see §2b.
+- 256 SDK tests (was 199), 52 scaffolder, `check:all` clean. New: `PORTING.md`.
+
+## 1d. ✅ Done 2026-07-26 (session 18) — the four things that were still honestly weak
+
+Session 17 made the adapter layer installable and reachable from any language.
+The four items below were what remained between that and "an app can just use
+this."
+
+- **`streamText({ tools })` — the largest remaining API gap (`sdkgaps.md` #1) is
+  closed.** An agentic loop can now stream. The obstacle was not the loop, it was
+  that the *final answer lives inside the grammar-constrained envelope* too, so
+  "stream the answer step" still meant emitting `{"answer":"Par`.
+  `createEnvelopeStreamParser` decodes the `answer` string incrementally —
+  including escapes split across chunk boundaries — while tool steps buffer
+  silently and surface as `steps`/`toolCalls`. Nothing ambiguous is ever emitted,
+  because text shown to a user cannot be withdrawn.
+  **The loop itself moved to `src/sdk/toolLoop.ts` and both drivers call it.** A
+  forked tool loop is worse than a forked adapter: the ways it drifts are
+  invisible until an agent misbehaves in production.
+  *Verified live against Gemma 4 E4B:* tool executed, 19 deltas streamed,
+  `deltas.join('') === text`, no envelope fragments leaked, 41.7 s.
+- **A non-JS app can start its own model.** `machine serve --supervised` emits one
+  line of JSON on stdout when ready (`{"event":"ready","url":…}`) and exits when
+  stdin closes; `--port 0` takes a free port, which is only knowable through that
+  handshake. On the Python side, `MachineServer` spawns, waits, **attaches to a
+  healthy server already on the port instead of loading a second 4 GB copy**,
+  restarts with backoff on an unexpected death, and kills the whole tree on the
+  way out.
+  The tree part is the one that bites: `machine serve` spawns `llama-server` as a
+  *grandchild*, so killing the child strands the process actually holding the
+  weights. Shutdown closes stdin first (letting the server take its own child
+  down), then falls back to `taskkill /T` or `killpg`. Stdin-close is also the
+  only cross-platform signal a child gets that its parent was *killed* — Windows
+  has no `PDEATHSIG` and no inherited process group.
+  *Verified live:* Python → `cmd.exe` → node → `llama-server`, ready in 23.7 s on
+  an OS-assigned port, grammar JSON and a tool call over HTTP, and **zero
+  orphaned `llama-server` processes after `stop()`**.
+- **The Python client is a real distribution.** `clients/python` is now a package
+  (`machine_activation/{client,server}.py`, `py.typed`), builds an sdist and a
+  wheel, and passes `twine check`. 11 supervision tests run against a fake CLI
+  that speaks the handshake — no weights needed — on Windows, macOS and Linux
+  across Python 3.9 and 3.13, because the supervisor touches process groups,
+  `taskkill` and pipe lifetimes, which differ per platform.
+  **Still not on PyPI** — see §9. The workflow uses trusted publishing and the
+  publisher has to be registered by the account owner; `PUBLISHING.md` has the
+  exact steps.
+- **Agent On Deck's coverage is now true and named.** It claimed 7 of 13 call
+  sites and implemented 5 — `describe_action_batch` and `synthesize_task_writeup`
+  were listed as covered while neither function existed. Both are implemented
+  now (the map step samples frames, because a local VLM cannot take a whole batch
+  the way Gemini can), so the claim is finally accurate. More importantly the
+  claim is **executable**: `local_model.COVERAGE` is a table, `coverage_report()`
+  computes the counts, and an import-time assertion fails if any verb marked
+  local is not actually implemented.
+  Two things the docs now say plainly rather than imply: **"Agent On Deck runs on
+  local models" is not true** — 6 of 13 sites need a different class of engine
+  (STT, TTS, embeddings, search), not a bigger LLM — and `local_model.py` is
+  still **not wired into any call site**, so the app runs entirely on cloud
+  Gemini today.
+  There is a second axis the old table hid: **four of the seven local verbs need
+  `--mmproj`.** With no projector, coverage is 3 of 13, and it degrades quietly.
+- 277 SDK tests (was 256), 11 Python tests, `typecheck` clean.
+
+---
+
 ## 2. 🔴 Run a model on macOS, Linux, iOS, Android
 
 Windows is done. The remaining four are what the platform claim rests on: one
@@ -122,6 +238,36 @@ computed across prompt-eval time, and `spawn` ENOENT escaped as an uncaught
 exception.
 
 ---
+
+## 2b. ✅ Done 2026-07-25 — the three local apps run on the live SDK
+
+Verified on this machine against a real Gemma-4 E4B Q4_0 GGUF (3.93 GB) and a
+vendored `llama-server` (build b9543), both already present in `Collecta-Local`.
+
+| App | Was | Now | Verified by |
+|---|---|---|---|
+| `Collecta-Local` (Next.js) | vendored `file:` tarball from **May 28** — pre-rename, missing every fix since | `machineai-activation`; both adapters delegate to the SDK | stub pipeline smoke (capture → PGlite → filed in bucket) **and** a real-model tool loop: Gemma 4 called `web_search`, used the result, answered `BLUE-OTTER-42` |
+| `Ingredient analyzer` (Capacitor) | pinned to the **abandoned** `MachineAI-codex` iteration at `0.1.0-alpha.0` | `machineai-activation` + `machineai-activation-capacitor`; 381-line local adapter → 4-line re-export | `tsc` clean (it had drifted from the contract), `vite build` clean — no `node:*` leaked into the browser bundle |
+| `Agent On Deck - Local` (Python sidecar) | **could not use the SDK at all** — 100% Python AI surface | `sidecar/local_model.py` over `machine serve`, via `pip install machine-activation` | live: grammar-constrained JSON with correct types in 19.8 s; streaming; **and a full agent loop** — Gemma 4 called `get_weather({city:'Paris'})`, Python executed it, model answered from the result (28.6 s). Degrades to `gemini.py`'s no-key shapes when serve is down |
+
+Notes:
+
+- `Collecta-Local` has **no git**. Backups of the files changed are in the session
+  scratchpad. Its 8 remaining `tsc` errors are pre-existing implicit-`any`s in
+  files this work never touched (`app/`, `components/`, `lib/actions/`).
+- `Collecta-Local/lib/local/runtime.ts` still contains the now-unused
+  `llamaChat`/`buildSession`/`buildSnapshot` helpers. Harmless (no
+  `noUnusedLocals`) but they should be deleted.
+- The Ingredient Analyzer is **wired, not device-verified** — a Capacitor port
+  needs an APK on hardware, and the native Kotlin plugin (`MachineActivation`)
+  cannot be exercised from a desktop build.
+- **Superseded by §1d for Agent On Deck.** The row above says "a full agent loop"
+  and that is true of the *SDK path*, but `local_model.py` covers 7 of 13 call
+  sites and is wired into none of them. Read §1d before quoting this table.
+- `Agent On Deck`'s `local_model.py` is **additive**: `gemini.py` is untouched and
+  cloud stays the default and fallback. Wiring it into call sites is the next step.
+  STT, TTS, bidi speech-to-speech, embeddings and search grounding have no
+  llama.cpp equivalent and are named in `local_model.UNSUPPORTED`.
 
 ## 3. ✅ Done 2026-07-24 — the catalog is live and `machine pull` works
 
@@ -214,8 +360,12 @@ Verified live: cancelled an in-flight generation in 731 ms.
 
 ## 7. 🟡 Remaining `sdkgaps.md` items
 
-- `streamText` has no `tools` → can't stream an agentic loop. **Still open** —
-  the largest remaining API gap now that the others are closed.
+- ~~`streamText` has no `tools`.~~ Done in session 18 — see §1d. `machine serve`
+  still deliberately never streams a *tool step* over HTTP: the response is a
+  grammar-constrained JSON envelope, and streaming its fragments would emit
+  partial JSON no OpenAI client can assemble into a `tool_calls` delta. In
+  process there is no such constraint, which is why `streamText` can do what the
+  wire format cannot.
 - ~~`toolChoice` accepted but never read.~~ Done. `'none'` skips the loop,
   `{ toolName }` forces that tool on the first step only (grammar drops the
   `answer` branch and every other tool), then reverts to `auto` so the loop can
@@ -230,7 +380,8 @@ Verified live: cancelled an in-flight generation in 731 ms.
   `format: 'safeint'`). Both versions are installed side by side as `zod3` /
   `zod4` devDeps and round-trip tested against the real library — the previous
   mock-only tests could never have caught this.
-- Document that streaming requires **`onChunk`**, not `onToken`. **Still open.**
+- ~~Document that streaming requires **`onChunk`**, not `onToken`.~~ Done —
+  `ActivationCompletionOptions` now says so at both fields.
 
 ## 8. ✅ Done — test-suite stall, and it wasn't a flake
 
@@ -257,6 +408,18 @@ Suite: **~4–5 min → 37 s**, 199 tests.
 
 ## 9. 🟢 Housekeeping
 
+- **Publish `machine-activation` to PyPI.** The package builds, passes
+  `twine check`, and `.github/workflows/python-client-release.yml` is wired for
+  trusted publishing on a `python-client-v*` tag. What is missing is a one-time
+  registration only the account owner can do: add a pending publisher on PyPI
+  (project `machine-activation`, owner `revhappy`, repo `MachineActivationSDK`,
+  workflow `python-client-release.yml`, environment `pypi`) and create a `pypi`
+  environment in GitHub. Exact steps in `PUBLISHING.md`. Until then
+  `pip install machine-activation` does not work and `pip install -e
+  clients/python` does.
+- **Wire `local_model.py` into Agent On Deck's call sites.** 7 of 13 are
+  implemented and none are routed, so the app still runs entirely on cloud
+  Gemini. Behind a provider check, per verb, using `local_model.supports()`.
 - **Tag the published release.** `0.2.0-beta.1` is on npm (verified: all four
   packages, published 2026-06-08) but has **no git tag**. Don't naively push
   `activation-sdk-v0.2.0-beta.1` — `.github/workflows/activation-sdk-release.yml`

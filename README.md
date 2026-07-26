@@ -30,6 +30,55 @@ archive against its published hash, and refuses to write to the cache if the
 bytes don't match. `doctor --run` then loads the model and tells you what your
 hardware actually does with it.
 
+## Plug it into an app
+
+A llama.cpp adapter ships in the box, so there is nothing to write:
+
+```ts
+import { createMachine, generateText } from 'machineai-activation';
+import { discoverLlamaServer, ensureLlamaServer } from 'machineai-activation/node';
+
+const { runtime } = await ensureLlamaServer({
+  serverBinary: discoverLlamaServer(process.cwd())!,
+  modelPath: './models/your-model.gguf',
+});
+
+const machine = createMachine({ runtimes: [runtime], compatibilityPolicy: 'permissive' });
+const { text } = await generateText({ model: machine.model({ filePath: './models/your-model.gguf' }), prompt: 'Hi' });
+```
+
+`ActivationRuntime` is still a three-member interface and any backend can
+implement it — MediaPipe, LiteRT-LM, `llama.rn`, web-llm. One of them now just
+comes pre-built. The portable half (`llamaServerRuntime`, `stubRuntime`) has no
+`node:*` imports, so it bundles for React Native, Capacitor and the browser.
+
+**Not a JavaScript app?** Serve the model instead:
+
+```bash
+machine serve ./models/your-model.gguf
+```
+
+That exposes the OpenAI chat-completions dialect — so an existing client in any
+language works by changing a base URL — plus `GET /machine/activation` for the
+contract.
+
+In Python your app can own the server rather than expect a user to start one:
+
+```python
+from machine_activation import MachineServer
+
+with MachineServer("./models/your-model.gguf") as server:
+    print(server.client().chat([{"role": "user", "content": "Hi"}]))
+```
+
+It finds the CLI, waits for the weights, attaches to a server already running
+instead of loading a second copy, restarts on a crash, and takes the whole
+process tree down on exit. See [`clients/python/`](./clients/python/).
+
+**Porting an existing app?** [PORTING.md](./PORTING.md) walks the three real
+seams — Node/Next server, Capacitor mobile, and non-JS over HTTP — with what
+actually broke in each.
+
 ## Or point it at a model you already have
 
 ```bash
@@ -103,7 +152,24 @@ const result = await generateText({
   prompt: 'What time is it?',
   tools: { clock: tool({ description: '...', parameters: s, execute: fn }) },
 });
+
+// …and the same loop, streamed
+const agent = streamText({
+  model,
+  prompt: 'What time is it?',
+  tools: { clock: tool({ description: '...', parameters: s, execute: fn }) },
+});
+for await (const delta of agent.textStream) process.stdout.write(delta);
+console.log(await agent.toolCalls);
 ```
+
+`streamText({ tools })` streams the **final answer only**. Every turn of a local
+tool loop is a grammar-constrained JSON envelope — that constraint is what keeps
+a 2–4B model in the ReAct format at all — so forwarding raw deltas would render
+`{"tool":"cl` into your UI. Tool steps are withheld and reported through
+`onStepFinish`/`steps`; when the model commits to answering, its text is decoded
+out of the envelope as it arrives. You get a constrained agent that still feels
+live, which on a CPU decoding at a few tokens a second is the whole difference.
 
 That surface is the **porting on-ramp**, not the point of the SDK. It's deliberately familiar so migration costs nothing — but a cloud API shape has no vocabulary for what actually matters locally: model load time, RAM fit, thermal throttling, swapping models, quantization tradeoffs. There's no `model.load()` in a cloud SDK because loading is free and instant; on-device it's seconds and gigabytes.
 

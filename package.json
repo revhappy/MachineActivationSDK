@@ -28,13 +28,16 @@
   "files": [
     "dist",
     "catalog",
+    "clients",
     "LICENSE",
     "README.md",
     "MIGRATION.md",
+    "PORTING.md",
     "GETTING_STARTED.md",
     "BACKEND_CAPABILITIES.md",
     "PACKAGE_CONSUMPTION.md",
-    "PUBLISHING.md"
+    "PUBLISHING.md",
+    "!clients/**/__pycache__"
   ],
   "sideEffects": false,
   "exports": {

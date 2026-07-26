@@ -33,6 +33,10 @@ test('machine describe emits a JSON snapshot of the full SDK surface', () => {
   assert.ok(cliNames.includes('describe'));
   assert.ok(cliNames.includes('pack'));
   assert.ok(cliNames.includes('pull'));
+  // `describe` is how an agent discovers this surface, so a command missing from
+  // it is effectively unshipped.
+  assert.ok(cliNames.includes('doctor'));
+  assert.ok(cliNames.includes('serve'));
 
   const sdk = parsed.sdk as Array<{ name: string }>;
   const sdkNames = sdk.map((s) => s.name);

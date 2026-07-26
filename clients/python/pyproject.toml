@@ -1,0 +1,53 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "machine-activation"
+version = "0.2.0b2"
+description = "Run local GGUF models from Python — client and supervisor for `machine serve`."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Machine AI Contributors" }]
+keywords = [
+  "local-llm",
+  "llm",
+  "gguf",
+  "llama-cpp",
+  "on-device",
+  "offline",
+  "machine-activation",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Typing :: Typed",
+]
+# No dependencies, deliberately. A local-first app should not have to take on a
+# cloud SDK's dependency tree to talk to a model on its own machine.
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/revhappy/MachineActivationSDK"
+Repository = "https://github.com/revhappy/MachineActivationSDK"
+Issues = "https://github.com/revhappy/MachineActivationSDK/issues"
+
+[project.scripts]
+machine-activation-check = "machine_activation:_console_main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["machine_activation"]
+
+[tool.hatch.build.targets.sdist]
+include = ["machine_activation", "README.md", "LICENSE"]
