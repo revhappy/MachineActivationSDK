@@ -72,19 +72,93 @@ test('electron-local-chat: substitutes APP_NAME and drops node-llama-cpp dep', (
   });
 });
 
-test('electron-local-chat: llamaServerRuntime spawns llama-server and forwards GBNF', () => {
+test('electron-local-chat: llamaServerRuntime delegates to the SDK adapter', () => {
   withTempDir((tmp) => {
     runCli(['srv', '-t', 'electron-local-chat', '-y'], { cwd: tmp });
     const source = readFileSync(
       join(tmp, 'srv', 'electron', 'llamaServerRuntime.ts'),
       'utf8',
     );
-    assert(source.includes('llama-server.exe'), 'spawns llama-server.exe');
-    assert(source.includes("from 'node:child_process'"), 'imports child_process for spawn');
-    assert(source.includes('/v1/chat/completions'), 'talks OpenAI-compatible chat endpoint');
-    assert(source.includes('grammar'), 'forwards grammar param to llama-server body');
+
+    // The template used to carry its own ~530-line llama-server client: SSE
+    // parsing, port allocation, health polling, capability reporting. That is
+    // now `ensureLlamaServer` in machineai-activation/node, and the behavioral
+    // guarantees this test used to assert on string-matched source (grammar
+    // pass-through, full chat history, tool-role folding) are covered by real
+    // tests in the SDK — tests/runtime/llamaServerRuntime.test.ts — which can
+    // actually execute them instead of grepping for them.
+    assert(
+      source.includes("from 'machineai-activation/node'"),
+      'imports the Node adapter entry point',
+    );
+    assert(source.includes('ensureLlamaServer'), 'delegates process management to the SDK');
     assert(source.includes('llamaServerRuntime'), 'exports llamaServerRuntime');
     assert(source.includes('disposeLlamaServer'), 'exports disposeLlamaServer for cleanup');
+    assert(
+      source.includes('closePooledLlamaServer'),
+      'cleanup goes through the SDK pool, not a local handle',
+    );
+    assert(
+      !source.includes('/v1/chat/completions'),
+      'no re-implemented HTTP client — that lives in the SDK now',
+    );
+    assert(
+      !source.includes("from 'node:child_process'"),
+      'no local spawn — the SDK owns the subprocess',
+    );
+  });
+});
+
+test('electron-local-chat: llamaServerRuntime resolves the binary per host platform', () => {
+  withTempDir((tmp) => {
+    runCli(['plat', '-t', 'electron-local-chat', '-y'], { cwd: tmp });
+    const source = readFileSync(
+      join(tmp, 'plat', 'electron', 'llamaServerRuntime.ts'),
+      'utf8',
+    );
+    for (const slug of ['win-x64', 'macos-arm64', 'macos-x64', 'linux-x64']) {
+      assert(source.includes(slug), `maps a vendor dir for ${slug}`);
+    }
+    assert(source.includes('process.platform'), 'branches on the host platform');
+    assert(
+      !source.includes("'vendor', 'llama-cpp', 'win-x64'"),
+      'no hardcoded win-x64 vendor path',
+    );
+    // Binary discovery stays in the template — it is the one thing the SDK
+    // cannot know, since dev and packaged Electron builds put the vendored
+    // binary in different places. The flag itself is the SDK's job now, so the
+    // template asks for offload declaratively.
+    assert(source.includes('gpuLayers'), 'requests GPU offload through the SDK adapter');
+    assert(source.includes('process.resourcesPath'), 'handles the packaged-app location');
+    assert(source.includes('app.getAppPath()'), 'handles the dev location');
+  });
+});
+
+test('electron-local-chat: llamaServerRuntime keeps no per-message logic of its own', () => {
+  withTempDir((tmp) => {
+    runCli(['hist', '-t', 'electron-local-chat', '-y'], { cwd: tmp });
+    const source = readFileSync(
+      join(tmp, 'hist', 'electron', 'llamaServerRuntime.ts'),
+      'utf8',
+    );
+
+    // A previous copy of this adapter collapsed completeChat to
+    // `messages[messages.length - 1]`, which silently broke multi-turn chat and
+    // generateText's tool loop. The lesson was not "add an assertion here" — it
+    // was that per-app copies of message handling will each break differently.
+    // The template must therefore not reimplement any of it.
+    assert(
+      !source.includes('messages[messages.length - 1]'),
+      'does not collapse the conversation to its last message',
+    );
+    assert(
+      !source.includes("role === 'tool'"),
+      'no local tool-role folding — the SDK adapter owns message translation',
+    );
+    assert(
+      source.includes('runtime.createSession(input)'),
+      'hands the session straight to the SDK adapter',
+    );
   });
 });
 
@@ -97,8 +171,27 @@ test('electron-local-chat: fetch-llama-cpp downloader resolves latest GitHub rel
     );
     assert(source.includes('ggml-org/llama.cpp'), 'targets the upstream llama.cpp repo');
     assert(source.includes('releases/latest'), 'pulls releases/latest dynamically');
-    assert(source.includes('llama-server.exe'), 'verifies llama-server.exe presence');
+    assert(source.includes('llama-server.exe'), 'knows the Windows binary name');
     assert(source.includes('version.json'), 'records version metadata for the runtime to read');
+  });
+});
+
+test('electron-local-chat: fetch-llama-cpp vendors a build for every supported host', () => {
+  withTempDir((tmp) => {
+    runCli(['hosts', '-t', 'electron-local-chat', '-y'], { cwd: tmp });
+    const source = readFileSync(
+      join(tmp, 'hosts', 'scripts', 'fetch-llama-cpp.js'),
+      'utf8',
+    );
+    for (const host of ['win32:x64', 'darwin:arm64', 'darwin:x64', 'linux:x64']) {
+      assert(source.includes(host), `selects an asset for ${host}`);
+    }
+    assert(source.includes('bin-macos-arm64'), 'matches the macOS arm64 release asset');
+    assert(source.includes('bin-ubuntu-x64'), 'matches the Linux release asset');
+    assert(source.includes('LLAMA_CPP_ASSET'), 'allows overriding the asset (CUDA/Vulkan builds)');
+    // POSIX hosts have no Expand-Archive; extraction must not be PowerShell-only.
+    assert(source.includes('unzip'), 'extracts via unzip on POSIX hosts');
+    assert(source.includes('chmodSync'), 'restores the executable bit on POSIX');
   });
 });
 

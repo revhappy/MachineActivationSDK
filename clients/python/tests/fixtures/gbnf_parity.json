@@ -1,0 +1,387 @@
+{
+  "note": "Generated from the TypeScript emitter (src/sdk/jsonSchemaToGbnf.ts). Regenerate with scripts/dump-gbnf-parity.js when that emitter changes intentionally.",
+  "cases": [
+    {
+      "schema": {
+        "type": "string"
+      },
+      "gbnf": "root ::= string\nstring ::= \"\\\"\" strchar* \"\\\"\"\nstrchar ::= [^\"\\\\] | \"\\\\\" escape\nescape ::= [\"\\\\/bfnrt] | \"u\" hex hex hex hex\nhex ::= [0-9a-fA-F]"
+    },
+    {
+      "schema": {
+        "enum": [
+          "pos",
+          "neg",
+          "neu"
+        ]
+      },
+      "gbnf": "root ::= enumv-0\nenumv-0 ::= \"\\\"pos\\\"\" | \"\\\"neg\\\"\" | \"\\\"neu\\\"\""
+    },
+    {
+      "schema": {
+        "const": "hello"
+      },
+      "gbnf": "root ::= constv-0\nconstv-0 ::= \"\\\"hello\\\"\""
+    },
+    {
+      "schema": {
+        "const": "say \"hi\""
+      },
+      "gbnf": "root ::= constv-0\nconstv-0 ::= \"\\\"say \\\\\\\"hi\\\\\\\"\\\"\""
+    },
+    {
+      "schema": {},
+      "gbnf": "root ::= anyValue\nws ::= [ \\t\\n\\r]*\nstring ::= \"\\\"\" strchar* \"\\\"\"\nstrchar ::= [^\"\\\\] | \"\\\\\" escape\nescape ::= [\"\\\\/bfnrt] | \"u\" hex hex hex hex\nhex ::= [0-9a-fA-F]\nnumber ::= \"-\"? (\"0\" | [1-9] [0-9]*) (\".\" [0-9]+)? ([eE] [-+]? [0-9]+)?\nboolean ::= \"true\" | \"false\"\njsonNull ::= \"null\"\nanyValue ::= string | number | boolean | jsonNull | anyArray | anyObject\nanyArray ::= \"[\" ws (anyValue (ws \",\" ws anyValue)*)? ws \"]\"\nanyObject ::= \"{\" ws (string ws \":\" ws anyValue (ws \",\" ws string ws \":\" ws anyValue)*)? ws \"}\""
+    },
+    {
+      "schema": {
+        "type": "string",
+        "nullable": true
+      },
+      "gbnf": "root ::= rule-0\nrule-0 ::= string | jsonNull\nstring ::= \"\\\"\" strchar* \"\\\"\"\nstrchar ::= [^\"\\\\] | \"\\\\\" escape\nescape ::= [\"\\\\/bfnrt] | \"u\" hex hex hex hex\nhex ::= [0-9a-fA-F]\njsonNull ::= \"null\""
+    },
+    {
+      "schema": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "gbnf": "root ::= arr-0\narr-0 ::= \"[\" ws (string (ws \",\" ws string)*)? ws \"]\"\nws ::= [ \\t\\n\\r]*\nstring ::= \"\\\"\" strchar* \"\\\"\"\nstrchar ::= [^\"\\\\] | \"\\\\\" escape\nescape ::= [\"\\\\/bfnrt] | \"u\" hex hex hex hex\nhex ::= [0-9a-fA-F]"
+    },
+    {
+      "schema": {
+        "type": "array",
+        "items": {
+          "type": "integer"
+        },
+        "minItems": 1
+      },
+      "gbnf": "root ::= arr-0\narr-0 ::= \"[\" ws integer (ws \",\" ws integer)* ws \"]\"\nws ::= [ \\t\\n\\r]*\ninteger ::= \"-\"? (\"0\" | [1-9] [0-9]*)"
+    },
+    {
+      "schema": {
+        "type": "array"
+      },
+      "gbnf": "root ::= arr-0\narr-0 ::= \"[\" ws (anyValue (ws \",\" ws anyValue)*)? ws \"]\"\nws ::= [ \\t\\n\\r]*\nstring ::= \"\\\"\" strchar* \"\\\"\"\nstrchar ::= [^\"\\\\] | \"\\\\\" escape\nescape ::= [\"\\\\/bfnrt] | \"u\" hex hex hex hex\nhex ::= [0-9a-fA-F]\nnumber ::= \"-\"? (\"0\" | [1-9] [0-9]*) (\".\" [0-9]+)? ([eE] [-+]? [0-9]+)?\nboolean ::= \"true\" | \"false\"\njsonNull ::= \"null\"\nanyValue ::= string | number | boolean | jsonNull | anyArray | anyObject\nanyArray ::= \"[\" ws (anyValue (ws \",\" ws anyValue)*)? ws \"]\"\nanyObject ::= \"{\" ws (string ws \":\" ws anyValue (ws \",\" ws string ws \":\" ws anyValue)*)? ws \"}\""
+    },
+    {
+      "schema": {
+        "type": "object",
+        "properties": {}
+      },
+      "gbnf": "root ::= obj-0\nobj-0 ::= anyObject\nws ::= [ \\t\\n\\r]*\nstring ::= \"\\\"\" strchar* \"\\\"\"\nstrchar ::= [^\"\\\\] | \"\\\\\" escape\nescape ::= [\"\\\\/bfnrt] | \"u\" hex hex hex hex\nhex ::= [0-9a-fA-F]\nnumber ::= \"-\"? (\"0\" | [1-9] [0-9]*) (\".\" [0-9]+)? ([eE] [-+]? [0-9]+)?\nboolean ::= \"true\" | \"false\"\njsonNull ::= \"null\"\nanyValue ::= string | number | boolean | jsonNull | anyArray | anyObject\nanyArray ::= \"[\" ws (anyValue (ws \",\" ws anyValue)*)? ws \"]\"\nanyObject ::= \"{\" ws (string ws \":\" ws anyValue (ws \",\" ws string ws \":\" ws anyValue)*)? ws \"}\""
+    },
+    {
+      "schema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "gbnf": "root ::= obj-0\nobj-0 ::= \"{\" ws \"}\"\nws ::= [ \\t\\n\\r]*"
+    },
+    {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "sentiment": {
+            "enum": [
+              "pos",
+              "neg",
+              "neu"
+            ]
+          },
+          "score": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "summary",
+          "sentiment"
+        ]
+      },
+      "gbnf": "root ::= obj-0\nobj-0 ::= \"{\" ws \"\\\"summary\\\"\" ws \":\" ws string ws \",\" ws \"\\\"sentiment\\\"\" ws \":\" ws enumv-1 (ws \",\" ws \"\\\"score\\\"\" ws \":\" ws number)? ws \"}\"\nenumv-1 ::= \"\\\"pos\\\"\" | \"\\\"neg\\\"\" | \"\\\"neu\\\"\"\nws ::= [ \\t\\n\\r]*\nstring ::= \"\\\"\" strchar* \"\\\"\"\nstrchar ::= [^\"\\\\] | \"\\\\\" escape\nescape ::= [\"\\\\/bfnrt] | \"u\" hex hex hex hex\nhex ::= [0-9a-fA-F]\nnumber ::= \"-\"? (\"0\" | [1-9] [0-9]*) (\".\" [0-9]+)? ([eE] [-+]? [0-9]+)?"
+    },
+    {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "a": {
+            "type": "string"
+          },
+          "b": {
+            "type": "string"
+          }
+        }
+      },
+      "gbnf": "root ::= obj-0\nobj-0 ::= \"{\" ws (\"\\\"a\\\"\" ws \":\" ws string (ws \",\" ws \"\\\"b\\\"\" ws \":\" ws string)?)? ws \"}\"\nws ::= [ \\t\\n\\r]*\nstring ::= \"\\\"\" strchar* \"\\\"\"\nstrchar ::= [^\"\\\\] | \"\\\\\" escape\nescape ::= [\"\\\\/bfnrt] | \"u\" hex hex hex hex\nhex ::= [0-9a-fA-F]"
+    },
+    {
+      "schema": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "tool": {
+                "const": "lookup"
+              }
+            },
+            "required": [
+              "tool"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "answer": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "answer"
+            ]
+          }
+        ]
+      },
+      "gbnf": "root ::= union-0\nunion-0 ::= obj-1 | obj-3\nobj-1 ::= \"{\" ws \"\\\"tool\\\"\" ws \":\" ws constv-2 ws \"}\"\nconstv-2 ::= \"\\\"lookup\\\"\"\nobj-3 ::= \"{\" ws \"\\\"answer\\\"\" ws \":\" ws string ws \"}\"\nws ::= [ \\t\\n\\r]*\nstring ::= \"\\\"\" strchar* \"\\\"\"\nstrchar ::= [^\"\\\\] | \"\\\\\" escape\nescape ::= [\"\\\\/bfnrt] | \"u\" hex hex hex hex\nhex ::= [0-9a-fA-F]"
+    },
+    {
+      "schema": {
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          }
+        ]
+      },
+      "gbnf": "root ::= union-0\nunion-0 ::= string | number\nstring ::= \"\\\"\" strchar* \"\\\"\"\nstrchar ::= [^\"\\\\] | \"\\\\\" escape\nescape ::= [\"\\\\/bfnrt] | \"u\" hex hex hex hex\nhex ::= [0-9a-fA-F]\nnumber ::= \"-\"? (\"0\" | [1-9] [0-9]*) (\".\" [0-9]+)? ([eE] [-+]? [0-9]+)?"
+    },
+    {
+      "schema": {
+        "allOf": [
+          {
+            "type": "string"
+          }
+        ]
+      },
+      "gbnf": "root ::= allof-0\nallof-0 ::= string\nstring ::= \"\\\"\" strchar* \"\\\"\"\nstrchar ::= [^\"\\\\] | \"\\\\\" escape\nescape ::= [\"\\\\/bfnrt] | \"u\" hex hex hex hex\nhex ::= [0-9a-fA-F]"
+    },
+    {
+      "schema": {
+        "type": [
+          "string",
+          "number"
+        ]
+      },
+      "gbnf": "root ::= rule-0\nrule-0 ::= string | number\nstring ::= \"\\\"\" strchar* \"\\\"\"\nstrchar ::= [^\"\\\\] | \"\\\\\" escape\nescape ::= [\"\\\\/bfnrt] | \"u\" hex hex hex hex\nhex ::= [0-9a-fA-F]\nnumber ::= \"-\"? (\"0\" | [1-9] [0-9]*) (\".\" [0-9]+)? ([eE] [-+]? [0-9]+)?"
+    },
+    {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "first": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "x"
+            ]
+          },
+          "second": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "x"
+            ]
+          }
+        },
+        "required": [
+          "first",
+          "second"
+        ]
+      },
+      "gbnf": "root ::= obj-0\nobj-0 ::= \"{\" ws \"\\\"first\\\"\" ws \":\" ws obj-1 ws \",\" ws \"\\\"second\\\"\" ws \":\" ws obj-1 ws \"}\"\nobj-1 ::= \"{\" ws \"\\\"x\\\"\" ws \":\" ws string ws \"}\"\nws ::= [ \\t\\n\\r]*\nstring ::= \"\\\"\" strchar* \"\\\"\"\nstrchar ::= [^\"\\\\] | \"\\\\\" escape\nescape ::= [\"\\\\/bfnrt] | \"u\" hex hex hex hex\nhex ::= [0-9a-fA-F]"
+    },
+    {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "a",
+                "b"
+              ]
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "n": {
+                "type": "number"
+              }
+            }
+          },
+          "flag": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "anything": {}
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "gbnf": "root ::= obj-0\nobj-0 ::= \"{\" ws \"\\\"items\\\"\" ws \":\" ws arr-3 (ws \",\" ws \"\\\"meta\\\"\" ws \":\" ws obj-2 (ws \",\" ws \"\\\"flag\\\"\" ws \":\" ws rule-1 (ws \",\" ws \"\\\"anything\\\"\" ws \":\" ws anyValue)?)?)? ws \"}\"\nrule-1 ::= boolean | jsonNull\nobj-2 ::= \"{\" ws (\"\\\"n\\\"\" ws \":\" ws number)? ws \"}\"\narr-3 ::= \"[\" ws (enumv-4 (ws \",\" ws enumv-4)*)? ws \"]\"\nenumv-4 ::= \"\\\"a\\\"\" | \"\\\"b\\\"\"\nws ::= [ \\t\\n\\r]*\nstring ::= \"\\\"\" strchar* \"\\\"\"\nstrchar ::= [^\"\\\\] | \"\\\\\" escape\nescape ::= [\"\\\\/bfnrt] | \"u\" hex hex hex hex\nhex ::= [0-9a-fA-F]\nnumber ::= \"-\"? (\"0\" | [1-9] [0-9]*) (\".\" [0-9]+)? ([eE] [-+]? [0-9]+)?\nboolean ::= \"true\" | \"false\"\njsonNull ::= \"null\"\nanyValue ::= string | number | boolean | jsonNull | anyArray | anyObject\nanyArray ::= \"[\" ws (anyValue (ws \",\" ws anyValue)*)? ws \"]\"\nanyObject ::= \"{\" ws (string ws \":\" ws anyValue (ws \",\" ws string ws \":\" ws anyValue)*)? ws \"}\""
+    },
+    {
+      "schema": {
+        "type": "boolean"
+      },
+      "gbnf": "root ::= boolean\nboolean ::= \"true\" | \"false\""
+    },
+    {
+      "schema": {
+        "type": "null"
+      },
+      "gbnf": "root ::= jsonNull\njsonNull ::= \"null\""
+    },
+    {
+      "schema": {
+        "type": "integer"
+      },
+      "gbnf": "root ::= integer\ninteger ::= \"-\"? (\"0\" | [1-9] [0-9]*)"
+    },
+    {
+      "schema": {
+        "type": "object",
+        "required": [
+          "operations"
+        ],
+        "properties": {
+          "operations": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "op",
+                    "name",
+                    "length",
+                    "width",
+                    "height"
+                  ],
+                  "properties": {
+                    "op": {
+                      "const": "box"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "length": {
+                      "type": "number"
+                    },
+                    "width": {
+                      "type": "number"
+                    },
+                    "height": {
+                      "type": "number"
+                    },
+                    "placement": {
+                      "type": "object",
+                      "properties": {
+                        "pos": {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          },
+                          "minItems": 3,
+                          "maxItems": 3
+                        }
+                      }
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "op",
+                    "name",
+                    "source",
+                    "plane"
+                  ],
+                  "properties": {
+                    "op": {
+                      "const": "mirror"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "plane": {
+                      "enum": [
+                        "XY",
+                        "XZ",
+                        "YZ"
+                      ]
+                    },
+                    "combine": {
+                      "type": "boolean"
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "op",
+                    "target",
+                    "vector"
+                  ],
+                  "properties": {
+                    "op": {
+                      "const": "translate"
+                    },
+                    "target": {
+                      "type": "string"
+                    },
+                    "vector": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "minItems": 3,
+                      "maxItems": 3
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              ]
+            }
+          }
+        }
+      },
+      "gbnf": "root ::= obj-0\nobj-0 ::= \"{\" ws \"\\\"operations\\\"\" ws \":\" ws arr-1 ws \"}\"\narr-1 ::= \"[\" ws union-2 (ws \",\" ws union-2)* ws \"]\"\nunion-2 ::= obj-3 | obj-7 | obj-10\nobj-3 ::= \"{\" ws \"\\\"op\\\"\" ws \":\" ws constv-6 ws \",\" ws \"\\\"name\\\"\" ws \":\" ws string ws \",\" ws \"\\\"length\\\"\" ws \":\" ws number ws \",\" ws \"\\\"width\\\"\" ws \":\" ws number ws \",\" ws \"\\\"height\\\"\" ws \":\" ws number (ws \",\" ws \"\\\"placement\\\"\" ws \":\" ws obj-4)? ws \"}\"\nobj-4 ::= \"{\" ws (\"\\\"pos\\\"\" ws \":\" ws arr-5)? ws \"}\"\narr-5 ::= \"[\" ws number (ws \",\" ws number)* ws \"]\"\nconstv-6 ::= \"\\\"box\\\"\"\nobj-7 ::= \"{\" ws \"\\\"op\\\"\" ws \":\" ws constv-9 ws \",\" ws \"\\\"name\\\"\" ws \":\" ws string ws \",\" ws \"\\\"source\\\"\" ws \":\" ws string ws \",\" ws \"\\\"plane\\\"\" ws \":\" ws enumv-8 (ws \",\" ws \"\\\"combine\\\"\" ws \":\" ws boolean)? ws \"}\"\nenumv-8 ::= \"\\\"XY\\\"\" | \"\\\"XZ\\\"\" | \"\\\"YZ\\\"\"\nconstv-9 ::= \"\\\"mirror\\\"\"\nobj-10 ::= \"{\" ws \"\\\"op\\\"\" ws \":\" ws constv-11 ws \",\" ws \"\\\"target\\\"\" ws \":\" ws string ws \",\" ws \"\\\"vector\\\"\" ws \":\" ws arr-5 ws \"}\"\nconstv-11 ::= \"\\\"translate\\\"\"\nws ::= [ \\t\\n\\r]*\nstring ::= \"\\\"\" strchar* \"\\\"\"\nstrchar ::= [^\"\\\\] | \"\\\\\" escape\nescape ::= [\"\\\\/bfnrt] | \"u\" hex hex hex hex\nhex ::= [0-9a-fA-F]\nnumber ::= \"-\"? (\"0\" | [1-9] [0-9]*) (\".\" [0-9]+)? ([eE] [-+]? [0-9]+)?\nboolean ::= \"true\" | \"false\""
+    }
+  ]
+}

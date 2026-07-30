@@ -2,6 +2,15 @@
 
 This file describes the current implementation posture of the activation SDK.
 
+> **Product focus (2026-07-24):** this is **the adapter layer for local models** —
+> plug a GGUF into any app, on any OS, to **test** it and to **package** it. Scope is
+> Windows + macOS + Linux + Android + iOS. The Vercel-AI-SDK-shaped surface is the
+> porting on-ramp, not the identity. Full statement in `TODO.md` §0.
+>
+> **Per-platform truth lives in [PLATFORM_MATRIX.md](./PLATFORM_MATRIX.md)**, which
+> distinguishes *wired and typechecked* from *actually run on hardware*. As of
+> 2026-07-24 every non-Windows lane is the former, not the latter.
+
 ## Already Implemented
 
 - standalone top-level package boundary
@@ -76,7 +85,7 @@ The SDK is now standalone in the following sense:
 - it emits generated `dist/` output
 - the host consumes it through a package-style import path
 
-It is not yet a separately published package, but it is no longer structurally owned by any host app toolchain.
+It is published to the public npm registry as `machineai-activation@0.2.0-beta.1` (first published 2026-06-08), and it is no longer structurally owned by any host app toolchain.
 
 ## Adapter Surface Status
 
@@ -97,15 +106,36 @@ That means an outside consumer can implement the session runtime first and add r
 
 ## Highest-Value Next Steps
 
-1. Promote observed probe results more clearly in the UI.
-2. Expand probe coverage beyond:
-   - text sanity
-   - streaming
-   - structured JSON
-   - projector init
-3. Exercise the release workflow publicly and validate the npm publish path end to end.
-4. Deepen the llama.cpp lane around mature backend features that the SDK should reuse rather than rebuild.
-5. Improve acceleration telemetry and richer context/session reporting for LiteRT.
-6. Deepen the `.litertlm` lane with broader diagnostics, packaging guidance, and on-device validation.
-7. Expand the model-import and registry lane beyond GGUF-first assumptions.
-8. Continue tightening the standalone SDK story in host-facing and framework-facing docs.
+The authoritative, prioritized queue is **[TODO.md](./TODO.md)**. In short:
+
+1. **Run a model on macOS, Linux, iOS and Android.** Windows x64 is verified on
+   hardware as of 2026-07-24; the other four lanes are wired and typechecked but
+   unverified. Nothing substitutes for this — the Windows run alone surfaced two
+   defects that 199 passing tests had not. `machine doctor --run <model.gguf>`
+   does the check in one command.
+2. **Grow the catalog past one cartridge.** It is live and `machine pull` works
+   with no flags, but a catalog of one is a demo.
+3. **Publish `machine-activation` to PyPI.** The package builds and passes
+   `twine check`; the trusted publisher has not been registered, so
+   `pip install machine-activation` still does not work. `PUBLISHING.md` has the
+   one-time steps, which only the account owner can perform.
+
+Closed 2026-07-24: `machine doctor` shipped; the tool-loop grammar cliff, `abortSignal`,
+`toolChoice`, the duplicated system prompt, zod v4 support, and the long-standing
+test-suite stall are all fixed.
+
+Closed 2026-07-25 (session 17): one llama-server adapter instead of four divergent
+copies; `machine serve`; tool calling over HTTP; the Python client; thinking-model
+reasoning channels; the loading-vs-timeout fix.
+
+Closed 2026-07-26 (session 18): `streamText({ tools })` streams an agentic loop
+(`sdkgaps.md` #1, the last large API gap) with the loop core shared with
+`generateText`; `machine serve --supervised` plus a Python `MachineServer` so an
+app starts its own model instead of asking a user to; the Python client became a
+real distribution; Agent On Deck's local coverage became executable rather than
+prose.
+
+Longer-standing items, still valid: promote observed probe results in the UI; expand
+probe coverage beyond text/streaming/JSON/projector; improve acceleration telemetry
+and context reporting for LiteRT; deepen the `.litertlm` lane; expand model import
+beyond GGUF-first assumptions.

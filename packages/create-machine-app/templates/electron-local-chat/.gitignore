@@ -5,6 +5,10 @@ out/
 *.log
 .DS_Store
 
+# Vendored llama.cpp prebuilts (hundreds of MB) — `npm run fetch:llama`
+# re-downloads them on any machine that needs them.
+vendor/
+
 # Env
 .env
 .env.*

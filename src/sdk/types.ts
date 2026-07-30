@@ -63,6 +63,19 @@ export interface CommonGenerationOptions {
   stopSequences?: string[];
   preferredAcceleration?: ActivationAccelerationMode[];
   abortSignal?: AbortSignal;
+  /**
+   * A GBNF grammar to constrain generation, passed straight to the backend.
+   *
+   * `generateObject` derives one from your schema, so you rarely need this. It
+   * exists for the cases a schema cannot express: constrained *streaming* (which
+   * `generateObject` does not do), a hand-written grammar, or forwarding a
+   * grammar that arrived from somewhere else — `machine serve` compiles the
+   * caller's `response_format.json_schema` here.
+   *
+   * Backends that cannot constrain generation ignore it. Use `jsonSchemaToGbnf`
+   * to build one from a JSON Schema.
+   */
+  grammar?: string;
 }
 
 // Use `any` in the tool record so `Record<string, tool(...)>` stays assignable
@@ -99,13 +112,56 @@ export interface GenerateTextResult {
 
 export interface StreamTextOptions extends CommonGenerationOptions {
   model: MachineModel;
+  /**
+   * Tools the model may call, executed in this process.
+   *
+   * The loop is the same one `generateText` runs — same preamble, same
+   * grammar-constrained envelope, same termination — so an agent behaves
+   * identically whether or not you stream it.
+   *
+   * What streams is the *final answer only*. Intermediate turns are a
+   * grammar-locked JSON envelope, and forwarding those deltas would render
+   * `{"tool":"sea` into a chat window; they are withheld and surfaced as
+   * `steps`/`toolCalls` instead. Once the model commits to answering, its text
+   * is decoded out of the envelope and streamed token by token — so a
+   * constrained agentic loop still feels live, which on a CPU decoding at a few
+   * tokens a second is the difference between an app that works and one that
+   * looks hung.
+   */
+  tools?: Record<string, AnyToolDefinition>;
+  toolChoice?: 'auto' | 'none' | { toolName: string };
+  maxSteps?: number;
+  onStepFinish?: (step: StepResult) => void | Promise<void>;
+  /**
+   * Called as chain-of-thought arrives from a thinking model.
+   *
+   * `textStream` carries the *answer* only, so a UI bound to it never renders
+   * the model's private deliberation as the reply. Thinking models are common
+   * enough now (Gemma 4, DeepSeek-R1, Qwen3) that ignoring the channel makes
+   * them look like they generated nothing at all — which is exactly what a live
+   * Gemma 4 run reported before this existed.
+   *
+   * Receives the accumulated reasoning and the newest delta. Backends with no
+   * separate reasoning channel never call it.
+   */
+  onReasoning?: (reasoningText: string, reasoningDelta: string) => void;
 }
 
 export interface StreamTextResult {
+  /**
+   * Text as it is generated.
+   *
+   * With `tools`, this carries the final answer only — see `tools`. Without
+   * them it is the whole completion.
+   */
   textStream: AsyncIterable<string>;
   text: Promise<string>;
   usage: Promise<UsageInfo>;
   finishReason: Promise<FinishReason>;
+  /** Every step the loop ran, in order. One entry when no tools were used. */
+  steps: Promise<StepResult[]>;
+  /** Flattened convenience view of the tools that were called, in order. */
+  toolCalls: Promise<Array<{ toolName: string; args: unknown }>>;
   abort(): Promise<void>;
 }
 

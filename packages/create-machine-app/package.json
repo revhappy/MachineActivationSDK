@@ -29,10 +29,11 @@
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck:adapters": "tsc -p tsconfig.adapters.json",
     "build": "npm run clean && tsc -p tsconfig.build.json",
     "test:build": "node -e \"require('fs').rmSync('.test-dist', { recursive: true, force: true })\" && tsc -p tsconfig.tests.json",
     "test": "npm run build && npm run test:build && node .test-dist/tests/run.js",
-    "check": "npm run typecheck && npm run test && npm run build",
+    "check": "npm run typecheck && npm run typecheck:adapters && npm run test && npm run build",
     "prepack": "npm run build"
   }
 }

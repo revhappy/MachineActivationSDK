@@ -1,4 +1,7 @@
-import type { ActivationCompletionOptions } from '../activation/activationAdapter';
+import type {
+  ActivationCompletionOptions,
+  ActivationSession,
+} from '../activation/activationAdapter';
 import type {
   FinishReason,
   GenerateObjectOptions,
@@ -7,11 +10,26 @@ import type {
   UsageInfo,
 } from './types';
 import { jsonSchemaToGbnf } from './jsonSchemaToGbnf';
+import { linkSessionAbort, throwIfAborted } from './abort';
 
 export async function generateObject<T>(
   options: GenerateObjectOptions<T>,
 ): Promise<GenerateObjectResult<T>> {
+  throwIfAborted(options.abortSignal, 'generateObject was aborted before it started.');
+
   const session = await options.model.getSession();
+  const unlinkAbort = linkSessionAbort(options.abortSignal, session);
+  try {
+    return await runGenerateObject(session, options);
+  } finally {
+    unlinkAbort();
+  }
+}
+
+async function runGenerateObject<T>(
+  session: ActivationSession,
+  options: GenerateObjectOptions<T>,
+): Promise<GenerateObjectResult<T>> {
   const grammar = buildGrammarFromSchema(options.schema);
   // Grammar-constrained generation should only ever emit a valid JSON instance
   // of the schema, so retrying against a schema-violating sample is pointless.
@@ -27,6 +45,7 @@ export async function generateObject<T>(
     stopSequences: options.stopSequences,
     responseFormat: 'json',
     grammar,
+    abortSignal: options.abortSignal,
   };
 
   const initialMessages = options.messages && options.messages.length > 0
@@ -45,6 +64,11 @@ export async function generateObject<T>(
   let lastError: unknown = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    throwIfAborted(
+      options.abortSignal,
+      `generateObject was aborted before attempt ${attempt + 1}.`,
+    );
+
     const completionOptions: ActivationCompletionOptions = {
       ...baseCompletionOptions,
       systemPrompt:

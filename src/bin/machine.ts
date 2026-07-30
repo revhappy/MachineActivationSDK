@@ -5,6 +5,8 @@ import { dirname, join as pathJoin } from 'node:path';
 import { parseArgs } from './args';
 import { errorln, println, red } from './output';
 import { runDescribe } from './commands/describe';
+import { runDoctor } from './commands/doctor';
+import { runFetchRuntime } from './commands/fetchRuntime';
 import { runInfo } from './commands/info';
 import { runInit } from './commands/init';
 import { runInspect } from './commands/inspect';
@@ -12,10 +14,14 @@ import { runList } from './commands/list';
 import { runPack } from './commands/pack';
 import { runPull } from './commands/pull';
 import { runSearch } from './commands/search';
+import { runServe } from './commands/serve';
 import { runUnpack } from './commands/unpack';
 import { runValidate } from './commands/validate';
 
 const COMMANDS: Record<string, (argv: string[]) => Promise<number>> = {
+  doctor: runDoctor,
+  serve: runServe,
+  'fetch-runtime': runFetchRuntime,
   init: runInit,
   pack: runPack,
   unpack: runUnpack,
@@ -35,6 +41,9 @@ Usage:
   machine <command> [args] [--flags]
 
 Commands:
+  fetch-runtime                  Download llama-server for this machine (run this first).
+  doctor <model.gguf> [--run]    Can this model run here? Fit, speed, what's degraded.
+  serve <model.gguf|id>          Serve a local model over HTTP (OpenAI-compatible).
   init <dir>                     Scaffold a new cartridge directory.
   pack <dir> [--out <file>]      Build a .mcart from an extracted cartridge.
   unpack <file> [--out <dir>]    Extract a .mcart into a directory.

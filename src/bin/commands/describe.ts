@@ -197,6 +197,19 @@ const CLI_COMMANDS: CliDescription[] = [
     description: 'Dump full manifest + file listing + sha256 hashes. Non-zero exit on tampering.',
   },
   {
+    name: 'doctor',
+    usage: 'machine doctor <model.gguf | cartridge-id> [--run] [--server <path>] [--gpu-layers <n>] [--ctx <n>] [--cache <dir>] [--json]',
+    description:
+      "Answer whether a local model can run on this machine: GGUF architecture/quantization/parameters/context, device memory, a memory-fit verdict, and the resolved activation contract. Accepts a .gguf path or the id of an already-pulled cartridge. With --run it loads the model through llama-server and reports observed tokens/sec, acceleration, and whether grammar-constrained JSON actually works. Needs no catalog or network.",
+  },
+  {
+    name: 'serve',
+    usage:
+      'machine serve <model.gguf | cartridge-id> [--port <n>] [--host <addr>] [--server <path>] [--gpu-layers <n>] [--ctx <n>] [--api-key <key>] [--cors] [--cache <dir>]',
+    description:
+      "Serve a local model over HTTP so an app in any language can use it. Speaks the OpenAI chat-completions dialect (POST /v1/chat/completions with streaming and response_format, POST /v1/completions, GET /v1/models), so most existing clients work by changing a base URL. Also exposes GET /machine/activation — the resolved activation contract (memory fit, acceleration, what's degraded), which has no OpenAI equivalent. response_format.json_schema is compiled to a GBNF grammar and enforced by llama.cpp's sampler, so a non-JS caller gets the same guarantee generateObject gives TypeScript callers. Supports `tools`/`tool_choice`: the model's call is returned as OpenAI `tool_calls` for the client to execute and feed back, using the same grammar-constrained envelope generateText uses in-process — so an agent in any language gets the same reliability. Binds 127.0.0.1 by default.",
+  },
+  {
     name: 'pull',
     usage: 'machine pull <id>[@<version>] [--catalog <url>] [--cache <dir>] [--force]',
     description: 'Download and cache a cartridge from a catalog. Sha256-verified. Atomic: partial pulls never corrupt the cache.',

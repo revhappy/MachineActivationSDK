@@ -17,7 +17,7 @@ Current status:
 - generated capability-catalog source from a shipped catalog artifact
 - separate source tree
 - consumed from the host through package-style imports
-- not yet published as an external npm package
+- published to the public npm registry as `machineai-activation@0.2.0-beta.1` (2026-06-08); installable with `npm i machineai-activation`
 
 Current package file:
 

@@ -16,6 +16,10 @@ dist/
 .pack/
 *.tgz
 
+# Vendored inference backend, fetched per machine by `machine fetch-runtime`.
+# Host-specific and ~100 MB: downloaded on demand, never committed.
+vendor/
+
 # Caches
 .npm-cache/
 .gstack/
@@ -27,3 +31,9 @@ npm-debug.log*
 # Local tooling / editor config (machine-specific — never publish)
 .claude/
 .DS_Store
+
+# Python client build artifacts
+__pycache__/
+*.pyc
+*.egg-info/
+clients/python/dist/

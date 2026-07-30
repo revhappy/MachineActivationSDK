@@ -14,13 +14,13 @@ Arguments:
 
 Flags:
   --catalog <url>    Catalog JSON URL. Defaults to
-                     https://machine-ai.github.io/catalog/catalog.json.
+                     https://revhappy.github.io/catalog/catalog.json.
   --cache <dir>      Override cache root (default: ~/.machine/cartridges).
   --force            Re-download even if the cartridge is already cached.
   --help             Show this message.
 `;
 
-const DEFAULT_CATALOG_URL = 'https://machine-ai.github.io/catalog/catalog.json';
+const DEFAULT_CATALOG_URL = 'https://revhappy.github.io/catalog/catalog.json';
 
 export async function runPull(argv: string[]): Promise<number> {
   if (argv.includes('--help') || argv.includes('-h')) {

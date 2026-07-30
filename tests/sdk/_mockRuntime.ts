@@ -36,6 +36,8 @@ export interface MockRuntimeOptions {
    * e.g. the `grammar` field.
    */
   onCompletionOptions?: (options: ActivationCompletionOptions) => void;
+  /** Observer invoked when the SDK calls `session.abort()`. */
+  onAbort?: () => void;
 }
 
 /**
@@ -105,7 +107,7 @@ export function createMockRuntime(options: MockRuntimeOptions = {}): ActivationR
           };
         },
         async abort() {
-          /* no-op */
+          options.onAbort?.();
         },
         async close() {
           /* no-op */

@@ -1,16 +1,152 @@
 # Machine Activation SDK
 
-The Machine Activation SDK
-
-Purpose is to let developers plug a local model into an app like a cartridge and get a simple activation path first, with diagnostics available when they want them.
+**The adapter layer for local models.** Plug a GGUF into an app like a cartridge — on Windows, macOS, Linux, Android, or iOS — and get a straight activation path, with diagnostics when you want them.
 
 The public package name is:
 
 - `machineai-activation`
 
-## Fast Start
+Two things this is for:
 
-If you're coming from the Vercel AI SDK, OpenAI SDK, or Anthropic SDK, the drop-in API is the best starting point:
+1. **Test a model against your app.** Point at a model file and ask: does it run *here*? Does it fit in memory? How fast? What's degraded? What acceleration is actually live? That's the **activation contract**, and it's the part of this SDK that has no equivalent elsewhere.
+2. **Package a model into your app.** The `.mcart` cartridge format, the `machine` CLI, and the catalog exist so shipping a multi-GB model with your product is a solved problem rather than a bespoke one each time.
+
+Both audiences are served: developers **porting** a cloud-first app onto local inference, and developers **building** local-only apps with this as the backbone.
+
+Per-platform status — including what is wired versus what has actually been run on hardware — lives in [PLATFORM_MATRIX.md](./PLATFORM_MATRIX.md). It is deliberately honest about the difference.
+
+## Sixty seconds, from nothing
+
+```bash
+npm i -g machineai-activation
+
+machine pull qwen2.5-0.5b-instruct          # 367 MB, sha256-verified, unpacked
+machine doctor qwen2.5-0.5b-instruct --run  # load it and measure this machine
+```
+
+No account, no API key, no config. `pull` reads
+[the catalog](https://revhappy.github.io/catalog/catalog.json), verifies the
+archive against its published hash, and refuses to write to the cache if the
+bytes don't match. `doctor --run` then loads the model and tells you what your
+hardware actually does with it.
+
+## Plug it into an app
+
+A llama.cpp adapter ships in the box, so there is nothing to write:
+
+```ts
+import { createMachine, generateText } from 'machineai-activation';
+import { discoverLlamaServer, ensureLlamaServer } from 'machineai-activation/node';
+
+const { runtime } = await ensureLlamaServer({
+  serverBinary: discoverLlamaServer(process.cwd())!,
+  modelPath: './models/your-model.gguf',
+});
+
+const machine = createMachine({ runtimes: [runtime], compatibilityPolicy: 'permissive' });
+const { text } = await generateText({ model: machine.model({ filePath: './models/your-model.gguf' }), prompt: 'Hi' });
+```
+
+`ActivationRuntime` is still a three-member interface and any backend can
+implement it — MediaPipe, LiteRT-LM, `llama.rn`, web-llm. One of them now just
+comes pre-built. The portable half (`llamaServerRuntime`, `stubRuntime`) has no
+`node:*` imports, so it bundles for React Native, Capacitor and the browser.
+
+**Not a JavaScript app?** Serve the model instead:
+
+```bash
+machine serve ./models/your-model.gguf
+```
+
+That exposes the OpenAI chat-completions dialect — so an existing client in any
+language works by changing a base URL — plus `GET /machine/activation` for the
+contract.
+
+In Python your app can own the server rather than expect a user to start one:
+
+```python
+from machine_activation import MachineServer
+
+with MachineServer("./models/your-model.gguf") as server:
+    print(server.client().chat([{"role": "user", "content": "Hi"}]))
+```
+
+It finds the CLI, waits for the weights, attaches to a server already running
+instead of loading a second copy, restarts on a crash, and takes the whole
+process tree down on exit. See [`clients/python/`](./clients/python/).
+
+**Porting an existing app?** [PORTING.md](./PORTING.md) walks the three real
+seams — Node/Next server, Capacitor mobile, and non-JS over HTTP — with what
+actually broke in each.
+
+## Or point it at a model you already have
+
+```bash
+npx machineai-activation doctor ./models/your-model.gguf
+```
+
+No account, no catalog, no network. It reads the GGUF header directly and tells you the architecture, quantization, parameter count and context window; measures the device it's running on; and gives a memory-fit verdict from the activation contract:
+
+```
+Qwen2.5 0.5B Instruct
+  size:           379.38 MB
+  architecture:   qwen2
+  quantization:   Q4_K_M
+  parameters:     494M
+  context:        32,768 tokens
+  chat template:  present
+
+Fit
+  est. footprint: 1,281 MB
+  recommended:    1,538 MB free
+  assessment:     supported
+
+Verdict: ready
+```
+
+### Getting the inference backend
+
+Anything that actually runs a model needs a `llama-server` binary. Get one for
+this machine:
+
+```bash
+npx machineai-activation fetch-runtime
+```
+
+That downloads the matching llama.cpp prebuilt into `vendor/llama-cpp/<slug>/`,
+where the SDK finds it with no configuration. Run it once per project; it is
+cached and idempotent, so re-running only downloads when upstream has a newer
+build. Want an accelerated build instead of the default?
+
+```bash
+npx machineai-activation fetch-runtime \
+  --asset 'llama-b\d+-bin-win-cuda-12.4-x64.zip'
+```
+
+Already have a `llama-server` you built yourself? Point `MACHINE_LLAMA_SERVER` at
+it, or pass `--server <path>`, and skip this entirely.
+
+It is deliberately not a `postinstall`: a silent multi-megabyte download during
+`npm install` breaks offline and CI installs and is skipped under
+`--ignore-scripts`. One explicit command instead.
+
+Add `--run` and `doctor` loads the model through `llama-server` and reports what actually happened — load time, time to first token, decode throughput, live acceleration, and whether grammar-constrained JSON works:
+
+```
+Live run
+  load time:      3.7s
+  first token:    1.05s
+  throughput:     12.3 tok/s (19 tokens, decode only)
+  acceleration:   cpu
+  grammar JSON:   works
+  structured: {"language":"French","confidence":0.95}
+```
+
+`--json` emits the whole report for scripting. This is the **test** verb, and it's the half of the product a cloud SDK has no analogue for.
+
+## Coming from a cloud SDK? Start here
+
+If you're arriving from the Vercel AI SDK, OpenAI SDK, or Anthropic SDK, there's a drop-in API shaped like the one you already use, so porting is a one-import change:
 
 ```ts
 import { createMachine, generateText, streamText, generateObject, tool } from 'machineai-activation';
@@ -42,11 +178,32 @@ const result = await generateText({
   prompt: 'What time is it?',
   tools: { clock: tool({ description: '...', parameters: s, execute: fn }) },
 });
+
+// …and the same loop, streamed
+const agent = streamText({
+  model,
+  prompt: 'What time is it?',
+  tools: { clock: tool({ description: '...', parameters: s, execute: fn }) },
+});
+for await (const delta of agent.textStream) process.stdout.write(delta);
+console.log(await agent.toolCalls);
 ```
 
-See [CARTRIDGE_SDK_ROADMAP.md](./CARTRIDGE_SDK_ROADMAP.md) for where this SDK is going: `.mcart` cartridge format, `machine` CLI, `machine pull`, scaffolders, headless UI kit.
+`streamText({ tools })` streams the **final answer only**. Every turn of a local
+tool loop is a grammar-constrained JSON envelope — that constraint is what keeps
+a 2–4B model in the ReAct format at all — so forwarding raw deltas would render
+`{"tool":"cl` into your UI. Tool steps are withheld and reported through
+`onStepFinish`/`steps`; when the model commits to answering, its text is decoded
+out of the envelope as it arrives. You get a constrained agent that still feels
+live, which on a CPU decoding at a few tokens a second is the whole difference.
 
-If you need the underlying activation handshake (capability resolution, diagnostics, onboarding plans, etc.), those APIs are still the recommended way in:
+That surface is the **porting on-ramp**, not the point of the SDK. It's deliberately familiar so migration costs nothing — but a cloud API shape has no vocabulary for what actually matters locally: model load time, RAM fit, thermal throttling, swapping models, quantization tradeoffs. There's no `model.load()` in a cloud SDK because loading is free and instant; on-device it's seconds and gigabytes.
+
+The activation handshake below *is* that vocabulary, and it's what you'll want once the port works.
+
+See [CARTRIDGE_SDK_ROADMAP.md](./CARTRIDGE_SDK_ROADMAP.md) for where this is going: `.mcart` cartridge format, `machine` CLI, `machine pull`, scaffolders, headless UI kit.
+
+For the activation handshake itself (capability resolution, diagnostics, onboarding plans):
 
 1. [GETTING_STARTED.md](./GETTING_STARTED.md)
 2. [BACKEND_CAPABILITIES.md](./BACKEND_CAPABILITIES.md)
@@ -469,6 +626,7 @@ Avoid using speculative names like separate product surfaces unless they actuall
 
 ## Reading Order
 
+0. [PLATFORM_MATRIX.md](./PLATFORM_MATRIX.md) — what runs where, and what's verified vs merely wired
 1. [GETTING_STARTED.md](./GETTING_STARTED.md)
 2. [BACKEND_CAPABILITIES.md](./BACKEND_CAPABILITIES.md)
 3. [PACKAGE_CONSUMPTION.md](./PACKAGE_CONSUMPTION.md)

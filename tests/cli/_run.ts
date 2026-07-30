@@ -19,11 +19,20 @@ export interface RunOptions {
   cwd?: string;
 }
 
+/** Hard ceiling on a single CLI invocation. `spawnSync` blocks the event
+ *  loop, so the harness's per-test timer can't fire while one is in flight —
+ *  this is the only thing that can stop a wedged child. */
+const CLI_TIMEOUT_MS = 30_000;
+
 export function runCli(args: readonly string[], options: RunOptions = {}): RunResult {
   const result = spawnSync(process.execPath, [CLI_PATH, ...args], {
     encoding: 'utf8',
     cwd: options.cwd,
+    timeout: CLI_TIMEOUT_MS,
   });
+  if (result.error) {
+    throw result.error;
+  }
   return {
     exitCode: result.status ?? -1,
     stdout: result.stdout ?? '',
