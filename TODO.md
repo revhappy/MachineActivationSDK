@@ -2,7 +2,15 @@
 
 > Updated 2026-07-24 after the *first live-hardware* session. Read alongside
 > `PLATFORM_MATRIX.md` (platform ledger), `sdkgaps.md` (defect list from a real
-> integration), and `PUBLISHING.md` (release plumbing).
+> integration), `PORTABILITY_GAPS.md` (defect list from the first **non-JS**
+> port — start there, it holds the current highest-priority item), and
+> `PUBLISHING.md` (release plumbing).
+>
+> **2026-07-30:** porting a Python desktop app (GPT4FreeCAD, a FreeCAD
+> workbench) surfaced seven issues, five now fixed. The one that matters most is
+> open: the schema→GBNF compiler exists only in TypeScript, so a Python consumer
+> needs Node.js to get grammar-enforced output — which makes the Python client a
+> client of a Node server rather than a peer. See `PORTABILITY_GAPS.md` #1.
 
 ---
 
