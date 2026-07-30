@@ -38,6 +38,7 @@ import './cli/describe.test';
 import './cli/doctor.test';
 import './cli/serve.test';
 import './runtime/llamaServerRuntime.test';
+import './runtime/fetchLlamaServer.test';
 import './runtime/stubRuntime.test';
 import './runtime/sdkIntegration.test';
 import './runtime/portability.test';

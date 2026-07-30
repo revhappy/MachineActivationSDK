@@ -45,3 +45,14 @@ export {
   type LlamaServerHandle,
   type StartLlamaServerOptions,
 } from './runtime/nodeLlamaServer';
+
+// Obtaining that binary in the first place, for hosts that would rather do it in
+// code than tell a user to run `machine fetch-runtime`.
+export {
+  fetchLlamaServer,
+  resolveLlamaTarget,
+  supportedLlamaHosts,
+  type FetchLlamaServerOptions,
+  type FetchLlamaServerResult,
+  type LlamaServerTarget,
+} from './runtime/fetchLlamaServer';

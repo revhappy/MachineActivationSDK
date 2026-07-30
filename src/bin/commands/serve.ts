@@ -148,7 +148,8 @@ export async function runServe(argv: string[]): Promise<number> {
   if (!serverBinary) {
     return fail(
       'no llama-server binary found.',
-      'Pass --server <path> or set MACHINE_LLAMA_SERVER.',
+      'Get one for this machine:  machine fetch-runtime\n' +
+        'Or point at your own:      --server <path> / $MACHINE_LLAMA_SERVER',
     );
   }
 

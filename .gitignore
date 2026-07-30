@@ -16,6 +16,10 @@ dist/
 .pack/
 *.tgz
 
+# Vendored inference backend, fetched per machine by `machine fetch-runtime`.
+# Host-specific and ~100 MB: downloaded on demand, never committed.
+vendor/
+
 # Caches
 .npm-cache/
 .gstack/

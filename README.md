@@ -104,7 +104,33 @@ Fit
 Verdict: ready
 ```
 
-Add `--run` and it loads the model through `llama-server` and reports what actually happened — load time, time to first token, decode throughput, live acceleration, and whether grammar-constrained JSON works:
+### Getting the inference backend
+
+Anything that actually runs a model needs a `llama-server` binary. Get one for
+this machine:
+
+```bash
+npx machineai-activation fetch-runtime
+```
+
+That downloads the matching llama.cpp prebuilt into `vendor/llama-cpp/<slug>/`,
+where the SDK finds it with no configuration. Run it once per project; it is
+cached and idempotent, so re-running only downloads when upstream has a newer
+build. Want an accelerated build instead of the default?
+
+```bash
+npx machineai-activation fetch-runtime \
+  --asset 'llama-b\d+-bin-win-cuda-12.4-x64.zip'
+```
+
+Already have a `llama-server` you built yourself? Point `MACHINE_LLAMA_SERVER` at
+it, or pass `--server <path>`, and skip this entirely.
+
+It is deliberately not a `postinstall`: a silent multi-megabyte download during
+`npm install` breaks offline and CI installs and is skipped under
+`--ignore-scripts`. One explicit command instead.
+
+Add `--run` and `doctor` loads the model through `llama-server` and reports what actually happened — load time, time to first token, decode throughput, live acceleration, and whether grammar-constrained JSON works:
 
 ```
 Live run

@@ -390,7 +390,8 @@ async function runLive(input: LiveRunInput): Promise<LiveRunReport> {
     return {
       ok: false,
       error:
-        'No llama-server binary found. Pass --server <path> or set MACHINE_LLAMA_SERVER.',
+        'No llama-server binary found. Run `machine fetch-runtime` to get one for ' +
+        'this machine, or pass --server <path> / set MACHINE_LLAMA_SERVER.',
     };
   }
 
@@ -549,8 +550,7 @@ function printHuman(
   );
   println(
     `  runtime:        ${
-      serverBinary ??
-      yellow('no llama-server found — pass --server or set MACHINE_LLAMA_SERVER')
+      serverBinary ?? yellow('none — run `machine fetch-runtime`')
     }`,
   );
 
