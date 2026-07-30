@@ -55,14 +55,30 @@ class ServerStartError(MachineError):
     """`machine serve` could not be started, or never became ready."""
 
 
+PACKAGE_NAME = "machineai-activation"
+
+# npm writes a `.cmd` shim on Windows and an extension-less shell script
+# elsewhere. `.exe` first: a real executable image beats a shim when both exist.
+_BIN_NAMES = (
+    ("machine.exe", "machine.cmd", "machine.bat", "machine")
+    if os.name == "nt"
+    else ("machine",)
+)
+
+
 def find_machine_cli(start_dir: Optional[str] = None) -> Optional[List[str]]:
     """Locate the `machine` CLI, as a command list ready for `subprocess`.
 
-    Order: ``$MACHINE_CLI``, then `machine` on PATH, then a `node_modules/.bin`
+    Order: ``$MACHINE_CLI``, then `machine` on PATH, then a `node_modules`
     walking up from `start_dir`. The last one matters most in practice — a
     Python sidecar shipped next to an Electron app has the SDK installed
     locally, not globally, and telling that developer to `npm i -g` is a
     packaging problem disguised as a setup step.
+
+    In that local lane we run the package's own JS entry with `node` rather than
+    npm's platform shim. It is one less process in the tree, stdin-close reaches
+    the server directly on shutdown, and on Windows it keeps the arguments away
+    from a batch file's re-parsing entirely.
     """
     override = os.getenv("MACHINE_CLI")
     if override:
@@ -73,25 +89,82 @@ def find_machine_cli(start_dir: Optional[str] = None) -> Optional[List[str]]:
         return _as_command(on_path)
 
     directory = Path(start_dir or os.getcwd()).resolve()
-    names = ["machine.cmd", "machine.exe", "machine"] if os.name == "nt" else ["machine"]
     for parent in [directory, *directory.parents]:
-        for name in names:
-            candidate = parent / "node_modules" / ".bin" / name
+        node_modules = parent / "node_modules"
+        if not node_modules.is_dir():
+            continue
+        direct = _node_entry(node_modules)
+        if direct:
+            return direct
+        for name in _BIN_NAMES:
+            candidate = node_modules / ".bin" / name
             if candidate.exists():
                 return _as_command(str(candidate))
 
     return None
 
 
-def _as_command(executable: str) -> List[str]:
-    """Wrap a Windows batch shim so CreateProcess can actually run it.
+def _node_entry(node_modules: Path) -> Optional[List[str]]:
+    """``[node, .../bin/machine.js]`` for an installed package, else None.
 
-    npm installs its bin shims as `.cmd` on Windows, which is not an executable
-    image. The extra `cmd.exe` in the tree is exactly why shutdown kills by tree
-    rather than by pid.
+    The entry point is read from the package's own ``bin`` field rather than
+    hard-coded, so a change to the published layout does not silently send us
+    back to the shim.
     """
-    if os.name == "nt" and executable.lower().endswith((".cmd", ".bat")):
-        return ["cmd.exe", "/c", executable]
+    package_dir = node_modules / PACKAGE_NAME
+    try:
+        manifest = json.loads((package_dir / "package.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+    bin_field = manifest.get("bin")
+    if isinstance(bin_field, str):
+        relative = bin_field
+    elif isinstance(bin_field, dict):
+        relative = bin_field.get("machine") or next(iter(bin_field.values()), None)
+    else:
+        relative = None
+    if not relative:
+        return None
+
+    entry = (package_dir / relative).resolve()
+    if not entry.is_file():
+        return None
+
+    node = _find_node(node_modules)
+    if not node:
+        return None  # No interpreter: fall back to the shim, which finds its own.
+    return [node, str(entry)]
+
+
+def _find_node(node_modules: Path) -> Optional[str]:
+    """A node executable, preferring one vendored next to the shims.
+
+    Mirrors what npm's own shim does, which matters for a bundled runtime that
+    ships node inside `node_modules/.bin` and never puts it on PATH.
+    """
+    for name in ("node.exe", "node") if os.name == "nt" else ("node",):
+        vendored = node_modules / ".bin" / name
+        if vendored.is_file():
+            return str(vendored)
+    return shutil.which("node")
+
+
+def _as_command(executable: str) -> List[str]:
+    """A command list for `subprocess`, with no shell in the middle.
+
+    Windows batch shims (npm installs `machine.cmd`) go straight to `Popen`:
+    `CreateProcess` runs them, and Python quotes each argument for us.
+
+    They used to be wrapped in `cmd.exe /c`, which was wrong. Given more than
+    one quoted argument, `cmd` strips the outermost quote pair of the whole
+    command line — so as soon as a second quoted argument appeared, an install
+    path containing a space was truncated at that space and the launch failed
+    with "'C:\\Users\\...\\Machine' is not recognized". That took out every user
+    under `Program Files`, `My Documents`, or any folder with a space in it.
+    Wrapping the line in another quote pair with `/s` does not fix it either;
+    not involving `cmd` at all does.
+    """
     return [executable]
 
 

@@ -29,10 +29,13 @@ with MachineServer("./models/your-model.gguf") as server:
         print(delta, end="", flush=True)
 ```
 
-`MachineServer` finds the `machine` CLI (PATH, `$MACHINE_CLI`, or a
-`node_modules/.bin` above you), starts it, waits for the weights to load, and
+`MachineServer` finds the `machine` CLI (`$MACHINE_CLI`, then PATH, then an npm
+install above you — where it runs the package's own entry point with `node`
+rather than npm's platform shim), starts it, waits for the weights to load, and
 shuts the whole process tree down on exit. No second terminal, and nothing for
-your user to start.
+your user to start. Install paths containing spaces (`Program Files`,
+`My Documents`, anything with a space) work — worth stating because before
+`0.2.0b3` they did not.
 
 It also **reuses**: point two `MachineServer`s at the same port and the second
 attaches to the first instead of loading another copy of a 4 GB model. Pass

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "machine-activation"
-version = "0.2.0b2"
+version = "0.2.0b3"
 description = "Run local GGUF models from Python — client and supervisor for `machine serve`."
 readme = "README.md"
 requires-python = ">=3.9"

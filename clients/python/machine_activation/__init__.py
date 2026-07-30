@@ -33,7 +33,7 @@ from .client import (
 )
 from .server import DEFAULT_PORT, MachineServer, ServerStartError, find_machine_cli
 
-__version__ = "0.2.0b2"
+__version__ = "0.2.0b3"
 
 __all__ = [
     "ActivationReport",

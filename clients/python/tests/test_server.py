@@ -213,18 +213,121 @@ class ProxyTests(unittest.TestCase):
 
 
 class DiscoveryTests(unittest.TestCase):
+    def setUp(self) -> None:
+        # Discovery consults the environment and PATH before node_modules, so
+        # the local-install tests below have to start from a known-empty state.
+        self._previous_cli = os.environ.pop("MACHINE_CLI", None)
+        import shutil as _shutil
+
+        from machine_activation import server as server_mod
+
+        self._real_which = server_mod.shutil.which
+        server_mod.shutil.which = lambda name: (
+            None if name == "machine" else self._real_which(name)
+        )
+        self._server_mod = server_mod
+        self._shutil = _shutil
+
+    def tearDown(self) -> None:
+        self._server_mod.shutil.which = self._real_which
+        if self._previous_cli is not None:
+            os.environ["MACHINE_CLI"] = self._previous_cli
+
     def test_machine_cli_env_override_wins(self) -> None:
         from machine_activation import find_machine_cli
 
-        previous = os.environ.get("MACHINE_CLI")
         os.environ["MACHINE_CLI"] = "/somewhere/machine"
         try:
             self.assertEqual(find_machine_cli(), ["/somewhere/machine"])
         finally:
-            if previous is None:
-                os.environ.pop("MACHINE_CLI", None)
-            else:
-                os.environ["MACHINE_CLI"] = previous
+            os.environ.pop("MACHINE_CLI", None)
+
+    def test_a_batch_shim_is_never_wrapped_in_cmd_exe(self) -> None:
+        """Regression: `cmd.exe /c` truncated any path containing a space.
+
+        cmd strips the outermost quote pair of the whole command line once a
+        second quoted argument is present, so `C:\\...\\Machine AI\\...` was cut
+        at the space and the launch died with "'C:\\Users\\...' is not
+        recognized". Every install under a spaced folder was affected.
+        """
+        from machine_activation.server import _as_command
+
+        spaced = r"C:\Users\me\Machine AI\node_modules\.bin\machine.cmd"
+        self.assertEqual(_as_command(spaced), [spaced])
+        for shim in (spaced, "/usr/local/bin/machine", r"C:\x\machine.bat"):
+            self.assertNotIn("cmd.exe", _as_command(shim))
+
+    def _install(self, root: Path, *, with_package: bool) -> Path:
+        """Fake a local npm install under `root`; returns the .bin shim path."""
+        import json as _json
+
+        bin_dir = root / "node_modules" / ".bin"
+        bin_dir.mkdir(parents=True, exist_ok=True)
+        shim = bin_dir / ("machine.cmd" if os.name == "nt" else "machine")
+        shim.write_text("", encoding="utf-8")
+        shim.chmod(0o755)
+
+        if with_package:
+            package = root / "node_modules" / "machineai-activation"
+            entry = package / "dist" / "cjs" / "bin" / "machine.js"
+            entry.parent.mkdir(parents=True, exist_ok=True)
+            entry.write_text("", encoding="utf-8")
+            (package / "package.json").write_text(
+                _json.dumps({"name": "machineai-activation",
+                             "bin": {"machine": "./dist/cjs/bin/machine.js"}}),
+                encoding="utf-8",
+            )
+        return shim
+
+    def test_a_space_in_the_install_path_still_resolves(self) -> None:
+        import tempfile
+
+        from machine_activation import find_machine_cli
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "Machine AI" / "my app"
+            shim = self._install(root, with_package=False)
+            command = find_machine_cli(str(root))
+
+            self.assertIsNotNone(command)
+            assert command is not None
+            # One argv element holding the whole spaced path: subprocess quotes
+            # it correctly, and no shell gets a chance to re-split it.
+            self.assertEqual(command, [str(shim)])
+            self.assertIn(" ", command[0])
+
+    def test_the_package_entry_is_preferred_over_the_shim(self) -> None:
+        import tempfile
+
+        from machine_activation import find_machine_cli
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "Machine AI" / "my app"
+            self._install(root, with_package=True)
+            command = find_machine_cli(str(root))
+
+            self.assertIsNotNone(command)
+            assert command is not None
+            if self._real_which("node") is None:
+                self.skipTest("no node on PATH; the shim fallback is correct here")
+            self.assertEqual(len(command), 2)
+            self.assertTrue(command[1].endswith("machine.js"), command)
+            self.assertNotIn(".bin", command[1])
+
+    def test_a_broken_package_falls_back_to_the_shim(self) -> None:
+        """A package.json we cannot read must not break discovery outright."""
+        import tempfile
+
+        from machine_activation import find_machine_cli
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "app"
+            shim = self._install(root, with_package=False)
+            package = root / "node_modules" / "machineai-activation"
+            package.mkdir(parents=True, exist_ok=True)
+            (package / "package.json").write_text("{not json", encoding="utf-8")
+
+            self.assertEqual(find_machine_cli(str(root)), [str(shim)])
 
 
 if __name__ == "__main__":
