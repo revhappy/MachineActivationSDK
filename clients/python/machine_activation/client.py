@@ -53,6 +53,14 @@ DEFAULT_BASE_URL = "http://127.0.0.1:8177"
 Message = Dict[str, Any]
 
 
+def _first_content(payload: Dict[str, Any]) -> str:
+    """The assistant text from a completions payload, or '' if there is none."""
+    choices = payload.get("choices") or []
+    if not choices:
+        return ""
+    return choices[0].get("message", {}).get("content", "") or ""
+
+
 class MachineError(RuntimeError):
     """The server returned an error, or could not be reached."""
 
@@ -268,21 +276,35 @@ class MachineClient:
         sampler, so the model cannot emit text that violates it. This replaces
         the usual local-model dance of asking for JSON, getting prose, and
         writing a tolerant parser.
+
+        Works against `machine serve` and against a bare `llama-server`, which
+        spell this request differently - see below.
         """
+        body = self._chat_body(
+            messages, stream=False, max_tokens=max_tokens, temperature=temperature
+        )
         payload = self._post(
             "/v1/chat/completions",
-            {
-                **self._chat_body(
-                    messages,
-                    stream=False,
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                ),
-                "response_format": {"type": "json_schema", "json_schema": {"schema": schema}},
-            },
+            {**body,
+             "response_format": {"type": "json_schema", "json_schema": {"schema": schema}}},
         )
-        choices = payload.get("choices") or []
-        text = choices[0].get("message", {}).get("content", "") if choices else ""
+        text = _first_content(payload)
+
+        if not text:
+            # `machine serve` compiles the OpenAI-style `json_schema` response
+            # format itself. A bare `llama-server` - which this client can now be
+            # pointed at directly, with no Node in the picture - does not
+            # understand that shape: it accepts the request, constrains nothing,
+            # and runs to the token limit returning empty content. Its own
+            # spelling is {"type": "json_object", "schema": ...}, so retry with
+            # that before giving up. Quietly returning nothing to a caller who
+            # asked for guaranteed JSON is the worst available outcome.
+            payload = self._post(
+                "/v1/chat/completions",
+                {**body, "response_format": {"type": "json_object", "schema": schema}},
+            )
+            text = _first_content(payload)
+
         if not text:
             raise MachineError("The model returned no content for a JSON-constrained request.")
         try:

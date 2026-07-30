@@ -31,21 +31,35 @@ from .client import (
     ModelNotReady,
     ToolCall,
 )
+from .llama import (
+    LlamaServer,
+    LlamaServerNotFound,
+    fetch_llama_server,
+    find_llama_server,
+    serve_local_model,
+    supported_llama_hosts,
+)
 from .server import DEFAULT_PORT, MachineServer, ServerStartError, find_machine_cli
 
-__version__ = "0.2.0b3"
+__version__ = "0.2.0b4"
 
 __all__ = [
     "ActivationReport",
     "DEFAULT_BASE_URL",
     "DEFAULT_PORT",
+    "LlamaServer",
+    "LlamaServerNotFound",
     "MachineClient",
     "MachineError",
     "MachineServer",
     "ModelNotReady",
     "ServerStartError",
     "ToolCall",
+    "fetch_llama_server",
+    "find_llama_server",
     "find_machine_cli",
+    "serve_local_model",
+    "supported_llama_hosts",
     "__version__",
 ]
 
