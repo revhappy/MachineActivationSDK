@@ -214,22 +214,26 @@ class ProxyTests(unittest.TestCase):
 
 class DiscoveryTests(unittest.TestCase):
     def setUp(self) -> None:
-        # Discovery consults the environment and PATH before node_modules, so
-        # the local-install tests below have to start from a known-empty state.
+        # Discovery consults $MACHINE_CLI and PATH before node_modules, so the
+        # local-install tests below have to start from a known-empty state: a
+        # developer with `machine` installed globally would otherwise see it win.
         self._previous_cli = os.environ.pop("MACHINE_CLI", None)
-        import shutil as _shutil
+        import types
 
         from machine_activation import server as server_mod
 
-        self._real_which = server_mod.shutil.which
-        server_mod.shutil.which = lambda name: (
-            None if name == "machine" else self._real_which(name)
-        )
         self._server_mod = server_mod
-        self._shutil = _shutil
+        self._real_shutil = server_mod.shutil
+        self._real_which = server_mod.shutil.which
+        # Swap the module's *reference*, not `shutil.which` itself — assigning
+        # through it would monkeypatch the real shutil for every other module
+        # for the duration of these tests.
+        server_mod.shutil = types.SimpleNamespace(
+            which=lambda name: None if name == "machine" else self._real_which(name)
+        )
 
     def tearDown(self) -> None:
-        self._server_mod.shutil.which = self._real_which
+        self._server_mod.shutil = self._real_shutil
         if self._previous_cli is not None:
             os.environ["MACHINE_CLI"] = self._previous_cli
 
@@ -279,13 +283,26 @@ class DiscoveryTests(unittest.TestCase):
             )
         return shim
 
+    def _project(self, tmp: str, *parts: str) -> Path:
+        """A project root under `tmp`, pre-resolved.
+
+        `find_machine_cli` resolves its start directory, and a temp dir is
+        exactly where that shows: macOS hands out `/var/...` for a path that
+        resolves to `/private/var/...`, and Windows can hand out an 8.3 alias
+        (`C:\\Users\\RUNNER~1\\...`) for `C:\\Users\\runneradmin\\...`. Comparing
+        against an unresolved path passes on Linux and fails on both others.
+        """
+        root = Path(tmp).resolve().joinpath(*parts)
+        root.mkdir(parents=True, exist_ok=True)
+        return root
+
     def test_a_space_in_the_install_path_still_resolves(self) -> None:
         import tempfile
 
         from machine_activation import find_machine_cli
 
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp) / "Machine AI" / "my app"
+            root = self._project(tmp, "Machine AI", "my app")
             shim = self._install(root, with_package=False)
             command = find_machine_cli(str(root))
 
@@ -302,7 +319,7 @@ class DiscoveryTests(unittest.TestCase):
         from machine_activation import find_machine_cli
 
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp) / "Machine AI" / "my app"
+            root = self._project(tmp, "Machine AI", "my app")
             self._install(root, with_package=True)
             command = find_machine_cli(str(root))
 
@@ -321,7 +338,7 @@ class DiscoveryTests(unittest.TestCase):
         from machine_activation import find_machine_cli
 
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp) / "app"
+            root = self._project(tmp, "app")
             shim = self._install(root, with_package=False)
             package = root / "node_modules" / "machineai-activation"
             package.mkdir(parents=True, exist_ok=True)
