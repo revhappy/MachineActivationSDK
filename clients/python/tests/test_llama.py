@@ -137,13 +137,32 @@ class SupervisionTests(EnvSandbox):
 
     def test_attaching_to_a_healthy_port_does_not_spawn_or_stop_it(self) -> None:
         """Reuse must not load a second copy, nor kill a server it borrowed."""
-        server = LlamaServer("m.gguf", port=9322)
-        server._healthy = lambda: True  # pretend something is already serving
-        server.start()
-        self.assertIsNone(server._process, "attached mode must not spawn")
-        self.assertTrue(server.is_running)
-        server.stop()  # must be a no-op, not a kill of someone else's process
-        self.assertIsNone(server._process)
+        with tempfile.TemporaryDirectory() as tmp:
+            # A real file: start() validates the model before it considers
+            # attaching, so a placeholder name would fail for the wrong reason.
+            model = Path(tmp) / "m.gguf"
+            model.write_text("", encoding="utf-8")
+            server = LlamaServer(str(model), port=9322)
+            server._healthy = lambda: True  # pretend something is already serving
+            server.start()
+            self.assertIsNone(server._process, "attached mode must not spawn")
+            self.assertTrue(server.is_running)
+            server.stop()  # must be a no-op, not a kill of someone else's process
+            self.assertIsNone(server._process)
+
+    def test_a_missing_model_is_reported_even_when_a_server_is_up(self) -> None:
+        """A typo must not silently bind to whatever is on the port.
+
+        start() used to take its attach shortcut first, so naming a model that
+        does not exist "succeeded" against an unrelated server - serving a
+        different model than the caller asked for, with no error. Caught because
+        a stray server on the default port made a sibling test fail.
+        """
+        server = LlamaServer(str(Path(tempfile.gettempdir()) / "nope.gguf"), port=9323)
+        server._healthy = lambda: True
+        with self.assertRaises(MachineError) as caught:
+            server.start()
+        self.assertIn("nope.gguf", str(caught.exception))
 
     def test_serve_local_model_falls_back_when_no_node_cli_exists(self) -> None:
         from machine_activation import llama as mod

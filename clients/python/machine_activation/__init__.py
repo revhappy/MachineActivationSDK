@@ -31,6 +31,7 @@ from .client import (
     ModelNotReady,
     ToolCall,
 )
+from .gbnf import json_schema_to_gbnf
 from .llama import (
     LlamaServer,
     LlamaServerNotFound,
@@ -41,7 +42,7 @@ from .llama import (
 )
 from .server import DEFAULT_PORT, MachineServer, ServerStartError, find_machine_cli
 
-__version__ = "0.2.0b4"
+__version__ = "0.3.0b1"
 
 __all__ = [
     "ActivationReport",
@@ -58,6 +59,7 @@ __all__ = [
     "fetch_llama_server",
     "find_llama_server",
     "find_machine_cli",
+    "json_schema_to_gbnf",
     "serve_local_model",
     "supported_llama_hosts",
     "__version__",

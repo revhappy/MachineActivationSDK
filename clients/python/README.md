@@ -82,6 +82,23 @@ sampler, so the model is *unable* to emit JSON that violates it. This is not the
 same thing as asking nicely for JSON — small local models fail that constantly,
 and they cannot fail this.
 
+**The compiler runs here, in Python.** `chat_json` turns your schema into a
+grammar locally and sends that, so it behaves the same against `machine serve`
+and against a bare `llama-server`, and needs **no Node.js** — which matters if
+your app embeds its own interpreter (a FreeCAD or Blender addon, say) where
+`npm install` is not something you can ask a user to do. It is also cheaper per
+request than making the server convert the schema, and the result is cacheable:
+
+```python
+from machine_activation import json_schema_to_gbnf
+
+grammar = json_schema_to_gbnf(schema)      # ~6 ms for a 19-branch schema
+m.chat(messages, grammar=grammar)          # reuse it across requests
+```
+
+Pass `chat_json(..., compile_grammar=False)` to send the schema instead and let
+the server compile it.
+
 ## Tools — the agent loop
 
 ```python

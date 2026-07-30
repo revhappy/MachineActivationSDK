@@ -376,14 +376,18 @@ class LlamaServer:
     def start(self) -> "LlamaServer":
         if self._process is not None:
             return self
+        # Check the model before the attach shortcut below. You named a specific
+        # file; if it does not exist that is a typo worth reporting, and
+        # attaching to whatever happens to be on this port would "succeed"
+        # while serving a different model entirely.
+        if not os.path.isfile(self.model):
+            raise MachineError(f"Model file not found: {self.model}")
         if self._healthy():
             # Something already serves this port: attach instead of paying the
             # load cost and the memory a second time.
             self._attached = True
             self._log(f"attached to the server already on {self.base_url}")
             return self
-        if not os.path.isfile(self.model):
-            raise MachineError(f"Model file not found: {self.model}")
 
         binary = self.resolve_binary()
         argv = [binary, "-m", self.model, "--host", self.host, "--port", str(self.port)]
