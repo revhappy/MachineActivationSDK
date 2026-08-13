@@ -1,0 +1,6 @@
+# Gradle / AGP build output
+build/
+
+# CMake + ninja working tree for the native llama.cpp build. Large and
+# machine-specific: the .so alone is ~96MB unstripped.
+.cxx/

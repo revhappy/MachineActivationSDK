@@ -87,6 +87,8 @@ export interface MachineActivationPlugin {
   }): Promise<MachineActivationModelProbeResult>;
   createSession(options: {
     modelPath: string;
+    /** mmproj image projector for vision GGUFs. LiteRT-LM ignores it — .litertlm bundles vision. */
+    projectorPath?: string | null;
     contextWindowTokens?: number;
     contextStrategy?: string;
     supportsVision?: boolean;

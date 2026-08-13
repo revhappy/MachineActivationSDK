@@ -1,0 +1,112 @@
+ext {
+    junitVersion = project.hasProperty('junitVersion') ? rootProject.ext.junitVersion : '4.13.2'
+    androidxAppCompatVersion = project.hasProperty('androidxAppCompatVersion') ? rootProject.ext.androidxAppCompatVersion : '1.7.1'
+}
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.13.0'
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20'
+    }
+}
+
+apply plugin: 'com.android.library'
+apply plugin: 'org.jetbrains.kotlin.android'
+
+/**
+ * Locate the vendored llama.cpp source and hand the absolute path to CMake.
+ *
+ * This has to happen in Gradle rather than in CMakeLists. npm installs `file:`
+ * dependencies as junctions on Windows, so the module is reached through the
+ * app's node_modules and any relative walk from CMAKE_CURRENT_SOURCE_DIR lands
+ * in the APP's tree. CMake's get_filename_component(... REALPATH) does not
+ * follow Windows junctions; java.nio's toRealPath() does.
+ *
+ * Override with -PllamaCppDir=<path> to build against your own checkout.
+ */
+String resolveLlamaCppDir() {
+    if (project.hasProperty('llamaCppDir')) {
+        return project.property('llamaCppDir').toString().replace('\\', '/')
+    }
+
+    def real = projectDir.toPath().toRealPath()          // <sdk>/packages/activation-capacitor/android
+    def candidates = [
+        real.resolve('../../../vendor/llama-cpp-src'),   // -> <sdk>/vendor/llama-cpp-src
+        real.resolve('../vendor/llama-cpp-src'),         // vendored beside the package
+        real.resolve('src/main/cpp/llama.cpp'),          // vendored inside the package (publishable layout)
+    ]
+
+    for (c in candidates) {
+        def norm = c.normalize()
+        if (new File(norm.toString(), 'include/llama.h').exists()) {
+            return norm.toString().replace('\\', '/')
+        }
+    }
+
+    throw new GradleException(
+        "llama.cpp source not found. Looked in:\n  " +
+        candidates.collect { it.normalize().toString() }.join('\n  ') +
+        "\n\nClone it with:\n" +
+        "  git clone --depth 1 --branch b10182 https://github.com/ggml-org/llama.cpp <sdk>/vendor/llama-cpp-src\n" +
+        "or build with -PllamaCppDir=<path>.")
+}
+
+android {
+    namespace "ai.machine.activation.capacitor"
+    compileSdk project.hasProperty('compileSdkVersion') ? rootProject.ext.compileSdkVersion : 36
+
+    defaultConfig {
+        minSdk project.hasProperty('minSdkVersion') ? rootProject.ext.minSdkVersion : 24
+
+        // arm64 only, deliberately. 32-bit ARM cannot address a multi-GB model
+        // and x86 exists only on emulators, where CPU inference of a 3B model
+        // is unusable anyway. Building those doubles compile time for nothing.
+        ndk {
+            abiFilters 'arm64-v8a'
+        }
+
+        externalNativeBuild {
+            cmake {
+                cppFlags '-std=c++17 -fexceptions -frtti'
+                arguments '-DANDROID_STL=c++_shared', "-DLLAMA_CPP_DIR=${resolveLlamaCppDir()}"
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path 'src/main/cpp/CMakeLists.txt'
+            version '3.22.1'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+
+    kotlinOptions {
+        jvmTarget = '21'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+dependencies {
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+}

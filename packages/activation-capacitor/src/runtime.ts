@@ -148,6 +148,10 @@ async function createSession(
 
   const nativeSession = await MachineActivationNative.createSession({
     modelPath: input.filePath,
+    // Forwarding this is what makes a two-file vision GGUF work: the weights
+    // and the mmproj projector must reach the engine together. Dropping it
+    // here is why projectorPath never reached native code before.
+    projectorPath: input.projectorPath ?? null,
     contextWindowTokens:
       input.contextWindowTokens ?? model.contextWindowTokens ?? DEFAULT_CONTEXT_TOKENS,
     contextStrategy: input.contextStrategy ?? 'fresh',
