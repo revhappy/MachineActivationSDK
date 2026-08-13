@@ -27,6 +27,24 @@ export interface ActivationModelConfigPreset {
   acceptedExtensions: string[];
   defaultRuntimeHint?: string;
   clearProjectorByDefault?: boolean;
+
+  /**
+   * Runtime hint per file extension, for presets that accept more than one
+   * model format. Falls back to `defaultRuntimeHint` when an extension is
+   * not listed.
+   */
+  runtimeHintByExtension?: Record<string, string>;
+
+  /**
+   * Extensions whose projector must survive a pick, overriding
+   * `clearProjectorByDefault`.
+   *
+   * A `.litertlm` package carries vision internally, so clearing the
+   * projector is correct there. A vision GGUF is two files — weights plus an
+   * mmproj projector — and clearing it silently removes the model's ability
+   * to see.
+   */
+  keepProjectorExtensions?: string[];
 }
 
 export interface ActivationModelConfigStorage {
@@ -45,6 +63,32 @@ export const LITERT_LM_ANDROID_PRESET: ActivationModelConfigPreset = {
   acceptedExtensions: ['.litertlm'],
   defaultRuntimeHint: 'litert.capacitor.android',
   clearProjectorByDefault: true,
+};
+
+export const LLAMA_CPP_ANDROID_PRESET: ActivationModelConfigPreset = {
+  acceptedExtensions: ['.gguf'],
+  defaultRuntimeHint: 'llama.capacitor.android',
+  // A vision GGUF needs its mmproj projector; clearing it blinds the model.
+  clearProjectorByDefault: false,
+};
+
+/**
+ * Accepts every model format the Android bridge can run, and derives the
+ * runtime from the file itself.
+ *
+ * Use this rather than a format-specific preset unless an app deliberately
+ * supports only one runtime — with a single-format preset the file picker
+ * rejects the other format before anything downstream is reachable.
+ */
+export const UNIVERSAL_ANDROID_PRESET: ActivationModelConfigPreset = {
+  acceptedExtensions: ['.litertlm', '.gguf'],
+  defaultRuntimeHint: 'litert.capacitor.android',
+  clearProjectorByDefault: true,
+  runtimeHintByExtension: {
+    '.litertlm': 'litert.capacitor.android',
+    '.gguf': 'llama.capacitor.android',
+  },
+  keepProjectorExtensions: ['.gguf'],
 };
 
 function getDefaultKeyValueStore(): ActivationKeyValueStore | null {
@@ -78,10 +122,22 @@ function fileMatchesAcceptedExtensions(
   fileName: string,
   acceptedExtensions: string[],
 ): boolean {
+  return matchedExtension(fileName, acceptedExtensions) != null;
+}
+
+/** The accepted extension this file matched, normalized, or null. */
+function matchedExtension(
+  fileName: string,
+  acceptedExtensions: string[],
+): string | null {
   const lowerName = fileName.toLowerCase();
-  return acceptedExtensions.some((extension) =>
-    lowerName.endsWith(normalizeExtension(extension)),
-  );
+  for (const extension of acceptedExtensions) {
+    const normalized = normalizeExtension(extension);
+    if (lowerName.endsWith(normalized)) {
+      return normalized;
+    }
+  }
+  return null;
 }
 
 export function normalizeStoredActivationModelConfig(
@@ -154,13 +210,22 @@ export function inferActivationModelConfigFromPickedFile(
     );
   }
 
+  const extension = matchedExtension(file.name, preset.acceptedExtensions);
+  const keepProjector =
+    extension != null &&
+    (preset.keepProjectorExtensions ?? []).some(
+      (candidate) => normalizeExtension(candidate) === extension,
+    );
+
   return {
     modelId: inferModelId(file.name),
     fileName: file.name,
     filePath: file.path,
     fileSizeBytes: file.sizeBytes,
-    projectorPath: preset.clearProjectorByDefault ? null : undefined,
-    runtimeHint: preset.defaultRuntimeHint,
+    projectorPath: preset.clearProjectorByDefault && !keepProjector ? null : undefined,
+    runtimeHint:
+      (extension != null ? preset.runtimeHintByExtension?.[extension] : undefined) ??
+      preset.defaultRuntimeHint,
   };
 }
 
